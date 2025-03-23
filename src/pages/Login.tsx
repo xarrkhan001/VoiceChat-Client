@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { MessageSquare, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { MessageSquare, Mail, Lock, Eye, EyeOff, LogIn, UserPlus, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -59,11 +59,13 @@ const Login = () => {
       </div>
       
       <div className="relative z-10 w-full max-w-md">
-        <div className="flex justify-center mb-8">
-          <div className="p-3 rounded-full bg-primary/10">
-            <MessageSquare className="h-10 w-10 text-primary" />
+        <Link to="/" className="block">
+          <div className="flex justify-center mb-8">
+            <div className="p-3 rounded-full bg-gradient-to-br from-primary/20 to-primary/5">
+              <MessageSquare className="h-10 w-10 text-primary" />
+            </div>
           </div>
-        </div>
+        </Link>
         
         <Card className="border-none shadow-lg bg-card/90 backdrop-blur-sm">
           <CardHeader className="text-center">
@@ -121,21 +123,29 @@ const Login = () => {
                 <Label htmlFor="remember" className="text-sm font-normal">Remember me</Label>
               </div>
               
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Signing in...' : 'Sign In'}
+              <Button type="submit" className="w-full gap-2" disabled={isLoading}>
+                {isLoading ? (
+                  <>Loading...</>
+                ) : (
+                  <>
+                    <LogIn className="h-4 w-4" />
+                    Sign In
+                  </>
+                )}
               </Button>
               
               {/* Demo shortcut for testing */}
               <Button 
                 type="button" 
                 variant="outline" 
-                className="w-full" 
+                className="w-full gap-2" 
                 onClick={() => {
                   setEmail('demo@example.com');
                   setPassword('password');
                   toast.info('Demo credentials filled in. Click Sign In to continue.');
                 }}
               >
+                <Info className="h-4 w-4" />
                 Use Demo Account
               </Button>
             </form>

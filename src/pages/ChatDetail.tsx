@@ -1,164 +1,178 @@
-
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MoreVertical, Phone, Video, Smile, Paperclip, Send, Image as ImageIcon, Mic, User, X } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { toast } from 'sonner';
+import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  ArrowLeft, 
+  MoreVertical, 
+  Phone, 
+  Video, 
+  Image as ImageIcon, 
+  Paperclip, 
+  Mic, 
+  SendHorizontal,
+  Check,
+  CheckCheck,
+  Clock
+} from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
+import { useIsMobile } from '@/hooks/use-mobile';
 import VoiceRecorder from '@/components/VoiceRecorder';
 
-// Sample data for chat details
-const chatData = [
+// Mock data for a chat
+const mockContacts = [
   {
     id: '1',
-    name: 'Alice Johnson',
+    name: 'Sarah Johnson',
     avatar: 'https://i.pravatar.cc/150?img=1',
-    status: 'Online',
-    lastSeen: 'Last seen today at 3:45 PM',
-    phone: '+1 (555) 123-4567',
-    email: 'alice.johnson@example.com',
+    lastSeen: new Date(),
+    isOnline: true,
   },
   {
     id: '2',
-    name: 'Bob Smith',
+    name: 'Michael Chen',
     avatar: 'https://i.pravatar.cc/150?img=2',
-    status: 'Offline',
-    lastSeen: 'Last seen yesterday at 9:30 PM',
-    phone: '+1 (555) 987-6543',
-    email: 'bob.smith@example.com',
+    lastSeen: new Date(Date.now() - 1000 * 60 * 15),
+    isOnline: false,
   },
   {
     id: '3',
-    name: 'Carol Williams',
+    name: 'Jessica Williams',
     avatar: 'https://i.pravatar.cc/150?img=5',
-    status: 'Online',
-    lastSeen: 'Online',
-    phone: '+1 (555) 234-5678',
-    email: 'carol.williams@example.com',
-  },
-  {
-    id: '4',
-    name: 'Dave Brown',
-    avatar: 'https://i.pravatar.cc/150?img=7',
-    status: 'Offline',
-    lastSeen: 'Last seen 2 days ago',
-    phone: '+1 (555) 876-5432',
-    email: 'dave.brown@example.com',
-  },
-  {
-    id: '5',
-    name: 'Eve Davis',
-    avatar: 'https://i.pravatar.cc/150?img=9',
-    status: 'Online',
-    lastSeen: 'Online',
-    phone: '+1 (555) 345-6789',
-    email: 'eve.davis@example.com',
-  },
+    lastSeen: new Date(Date.now() - 1000 * 60 * 60),
+    isOnline: false,
+  }
 ];
 
 // Mock message data
-const messagesData = {
-  '1': [
-    { id: '1', text: 'Hey Alice! How are you doing today?', sender: 'me', time: '10:30 AM', status: 'read' },
-    { id: '2', text: 'Hi! I\'m doing great, thanks for asking. How about you?', sender: 'them', time: '10:32 AM', status: 'read' },
-    { id: '3', text: 'Pretty good! Just working on some projects.', sender: 'me', time: '10:33 AM', status: 'read' },
-    { id: '4', text: 'That sounds interesting! What kind of projects?', sender: 'them', time: '10:35 AM', status: 'read' },
-    { id: '5', text: 'Mostly web development stuff. Working on a new chat application actually.', sender: 'me', time: '10:36 AM', status: 'read' },
-    { id: '6', text: 'That\'s so cool! I\'d love to see it when it\'s ready.', sender: 'them', time: '10:38 AM', status: 'read' },
-    { id: '7', text: 'Sure! I\'ll share it with you once it\'s done.', sender: 'me', time: '10:40 AM', status: 'read' },
-    { id: '8', text: 'Are we still meeting for coffee tomorrow?', sender: 'them', time: '10:42 AM', status: 'read' },
-    { id: '9', type: 'audio', audioUrl: '/demo-audio.mp3', sender: 'me', time: '10:45 AM', status: 'read', duration: 15 },
-    { id: '10', type: 'image', imageUrl: 'https://images.unsplash.com/photo-1698697399428-cd6224df0728', sender: 'them', time: '10:50 AM', status: 'read' },
-  ],
-  '2': [
-    { id: '1', text: 'Hi Bob, did you get the documents I sent?', sender: 'me', time: '2:15 PM', status: 'read' },
-    { id: '2', text: 'Yes, I received them. Thanks!', sender: 'them', time: '2:20 PM', status: 'read' },
-    { id: '3', text: 'I\'ll review them and get back to you tomorrow.', sender: 'them', time: '2:22 PM', status: 'read' },
-    { id: '4', text: 'That sounds good. Let me know if you have any questions.', sender: 'me', time: '2:25 PM', status: 'read' },
-    { id: '5', type: 'audio', audioUrl: '/demo-audio.mp3', sender: 'them', time: '2:30 PM', status: 'read', duration: 8 },
-  ],
-  '3': [
-    { id: '1', text: 'Hey Carol, how\'s the project coming along?', sender: 'me', time: '11:00 AM', status: 'read' },
-    { id: '2', text: 'It\'s going well! We\'re on track to finish by the deadline.', sender: 'them', time: '11:05 AM', status: 'read' },
-    { id: '3', text: 'That\'s great to hear!', sender: 'me', time: '11:07 AM', status: 'read' },
-    { id: '4', text: 'Would you be able to join the review meeting on Friday?', sender: 'them', time: '11:10 AM', status: 'read' },
-    { id: '5', text: 'Yes, I\'ll be there. What time is it?', sender: 'me', time: '11:12 AM', status: 'read' },
-    { id: '6', text: '2 PM Eastern. I\'ll send a calendar invite.', sender: 'them', time: '11:15 AM', status: 'read' },
-    { id: '7', text: 'Perfect, thanks!', sender: 'me', time: '11:17 AM', status: 'read' },
-    { id: '8', type: 'image', imageUrl: 'https://images.unsplash.com/photo-1593642532400-2682810df593', sender: 'me', time: '11:20 AM', status: 'read' },
-  ],
-  '4': [
-    { id: '1', text: 'Hi Dave, are you available for a quick call?', sender: 'me', time: '3:30 PM', status: 'read' },
-    { id: '2', text: 'I\'m in a meeting right now. Can I call you in about an hour?', sender: 'them', time: '3:35 PM', status: 'read' },
-    { id: '3', text: 'Sure, that works for me.', sender: 'me', time: '3:36 PM', status: 'read' },
-    { id: '4', text: 'Great, talk to you soon.', sender: 'them', time: '3:38 PM', status: 'read' },
-    { id: '5', type: 'audio', audioUrl: '/demo-audio.mp3', sender: 'me', time: '4:45 PM', status: 'read', duration: 22 },
-  ],
-  '5': [
-    { id: '1', text: 'Eve, have you seen the latest design updates?', sender: 'me', time: '9:00 AM', status: 'read' },
-    { id: '2', text: 'Not yet, can you share them with me?', sender: 'them', time: '9:05 AM', status: 'read' },
-    { id: '3', text: 'Sure, I\'ll send them over right away.', sender: 'me', time: '9:07 AM', status: 'read' },
-    { id: '4', text: 'Thanks, I appreciate it!', sender: 'them', time: '9:10 AM', status: 'read' },
-    { id: '5', type: 'image', imageUrl: 'https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e', sender: 'me', time: '9:15 AM', status: 'read' },
-    { id: '6', text: 'These look great! I especially like the color scheme.', sender: 'them', time: '9:20 AM', status: 'read' },
-    { id: '7', text: 'Thanks! I thought the colors would work well for our brand.', sender: 'me', time: '9:22 AM', status: 'read' },
-    { id: '8', text: 'Absolutely. Let\'s implement these changes.', sender: 'them', time: '9:25 AM', status: 'read' },
-  ],
+const generateMockMessages = (contactId: string) => {
+  const contact = mockContacts.find(c => c.id === contactId);
+  const currentUser = {
+    id: 'me',
+    name: 'You',
+    avatar: localStorage.getItem('userAvatar') || 'https://i.pravatar.cc/150?img=3',
+  };
+  
+  if (!contact) return [];
+  
+  return [
+    {
+      id: '1',
+      sender: contact,
+      content: 'Hey there! How are you doing today?',
+      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+      status: 'read',
+    },
+    {
+      id: '2',
+      sender: currentUser,
+      content: 'I\'m doing great! Just finished a big project at work.',
+      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 1.5).toISOString(),
+      status: 'read',
+    },
+    {
+      id: '3',
+      sender: contact,
+      content: 'That\'s awesome! Was it the one you were telling me about last week?',
+      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 1).toISOString(),
+      status: 'read',
+    },
+    {
+      id: '4',
+      sender: currentUser,
+      content: 'Yes, exactly! It was challenging but I learned a lot from it.',
+      timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+      status: 'read',
+    },
+    {
+      id: '5',
+      sender: contact,
+      content: 'Would you like to meet up for coffee this weekend and tell me more about it?',
+      timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
+      status: 'read',
+    },
+  ];
 };
 
 const ChatDetail = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const chatContainerRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const isMobile = useIsMobile();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  const [message, setMessage] = useState('');
+  const [contact, setContact] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
-  const [chat, setChat] = useState<any>(null);
-  const [showAttachMenu, setShowAttachMenu] = useState(false);
+  const [newMessage, setNewMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const [showImagePreview, setShowImagePreview] = useState(false);
-  const [previewImage, setPreviewImage] = useState('');
-
-  // Initialize chat data
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  
+  // Load contact and messages
   useEffect(() => {
     if (id) {
-      const currentChat = chatData.find(chat => chat.id === id);
-      const currentMessages = messagesData[id as keyof typeof messagesData] || [];
-      
-      setChat(currentChat);
-      setMessages(currentMessages);
+      const foundContact = mockContacts.find(c => c.id === id);
+      if (foundContact) {
+        setContact(foundContact);
+        setMessages(generateMockMessages(id));
+      }
     }
   }, [id]);
-
-  // Scroll to bottom on new messages
+  
+  // Scroll to bottom when messages change
   useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-
+  
+  // Recording timer
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (isRecording) {
+      interval = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
+    } else {
+      setRecordingDuration(0);
+    }
+    
+    return () => clearInterval(interval);
+  }, [isRecording]);
+  
   const handleSendMessage = () => {
-    if (message.trim() || audioBlob) {
-      const newMessage = {
-        id: String(Date.now()),
-        text: message,
-        sender: 'me',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        status: 'sent'
+    if (!newMessage.trim()) return;
+    
+    const message = {
+      id: Date.now().toString(),
+      sender: {
+        id: 'me',
+        name: 'You',
+        avatar: localStorage.getItem('userAvatar') || 'https://i.pravatar.cc/150?img=3',
+      },
+      content: newMessage,
+      timestamp: new Date().toISOString(),
+      status: 'sent',
+    };
+    
+    setMessages(prev => [...prev, message]);
+    setNewMessage('');
+    
+    // Simulate received message
+    setTimeout(() => {
+      const replyMessage = {
+        id: (Date.now() + 1).toString(),
+        sender: contact,
+        content: 'Thanks for letting me know!',
+        timestamp: new Date().toISOString(),
+        status: 'read',
       };
       
-      setMessages([...messages, newMessage]);
-      setMessage('');
-      toast.success('Message sent');
-    }
+      setMessages(prev => [...prev, replyMessage]);
+    }, 3000);
   };
-
+  
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -166,302 +180,195 @@ const ChatDetail = () => {
     }
   };
 
-  const triggerFilePicker = () => {
-    fileInputRef.current?.click();
-    setShowAttachMenu(false);
-  };
-
-  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      const file = files[0];
-      const url = URL.createObjectURL(file);
-      
-      if (file.type.startsWith('image/')) {
-        setPreviewImage(url);
-        setShowImagePreview(true);
-      }
-    }
-  };
-
-  const handleSendImage = () => {
-    if (previewImage) {
-      const newMessage = {
-        id: String(Date.now()),
-        type: 'image',
-        imageUrl: previewImage,
-        sender: 'me',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        status: 'sent'
-      };
-      
-      setMessages([...messages, newMessage]);
-      setShowImagePreview(false);
-      setPreviewImage('');
-      toast.success('Image sent');
-    }
-  };
-
-  const handleRecordingComplete = (blob: Blob) => {
-    setAudioBlob(blob);
-    setIsRecording(false);
+  // Function to handle voice message completion
+  const handleVoiceMessageComplete = (audioBlob: Blob) => {
+    // Create an audio URL for preview
+    const audioUrl = URL.createObjectURL(audioBlob);
     
-    const newMessage = {
-      id: String(Date.now()),
-      type: 'audio',
-      audioUrl: URL.createObjectURL(blob),
-      sender: 'me',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    // Create a simulated voice message
+    const voiceMessage = {
+      id: Date.now().toString(),
+      sender: {
+        id: '1', // Current user's ID
+        name: 'You',
+        avatar: localStorage.getItem('userAvatar') || 'https://i.pravatar.cc/150?img=3',
+      },
+      content: '',
+      timestamp: new Date().toISOString(),
+      isVoice: true,
+      voiceUrl: audioUrl,
       status: 'sent',
-      duration: 0, // You can calculate actual duration if needed
     };
     
-    setMessages([...messages, newMessage]);
-    toast.success('Voice message sent');
-  };
-
-  const handleCancelRecording = () => {
+    // Add to messages
+    setMessages(prev => [...prev, voiceMessage]);
     setIsRecording(false);
-    setAudioBlob(null);
   };
-
-  if (!chat) {
-    return <div>Loading...</div>;
+  
+  // Format timestamp
+  const formatMessageTime = (timestamp: string) => {
+    return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
+  };
+  
+  // Render message status icon
+  const renderMessageStatus = (status: string) => {
+    switch (status) {
+      case 'sent':
+        return <Check className="h-4 w-4 text-muted-foreground" />;
+      case 'delivered':
+        return <CheckCheck className="h-4 w-4 text-muted-foreground" />;
+      case 'read':
+        return <CheckCheck className="h-4 w-4 text-primary" />;
+      default:
+        return <Clock className="h-4 w-4 text-muted-foreground" />;
+    }
+  };
+  
+  if (!contact) {
+    return <div className="flex items-center justify-center h-full">Loading chat...</div>;
   }
-
-  return (
-    <div className="h-full flex flex-col">
-      {/* Chat header */}
-      <div className="p-3 border-b bg-card flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/chats')} className="mr-2">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <Avatar className="h-10 w-10 mr-3">
-            <AvatarImage src={chat.avatar} />
-            <AvatarFallback>{chat.name[0]}</AvatarFallback>
-          </Avatar>
-          <div>
-            <div className="font-medium">{chat.name}</div>
-            <div className="text-xs text-muted-foreground flex items-center">
-              {chat.status === 'Online' ? (
-                <>
-                  <span className="h-2 w-2 rounded-full bg-green-500 mr-1.5"></span>
-                  Online
-                </>
+  
+  const ChatHeader = () => (
+    <div className="flex items-center justify-between p-4 border-b">
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/chats')}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        
+        <Avatar>
+          <AvatarImage src={contact.avatar} />
+          <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
+        </Avatar>
+        
+        <div>
+          <div className="font-medium">{contact.name}</div>
+          <div className="text-xs text-muted-foreground">
+            {contact.isOnline ? 'Online' : `Last seen ${formatDistanceToNow(contact.lastSeen, { addSuffix: true })}`}
+          </div>
+        </div>
+      </div>
+      
+      <div className="flex items-center gap-1">
+        <Button variant="ghost" size="icon">
+          <Phone className="h-5 w-5" />
+        </Button>
+        <Button variant="ghost" size="icon">
+          <Video className="h-5 w-5" />
+        </Button>
+        <Button variant="ghost" size="icon">
+          <MoreVertical className="h-5 w-5" />
+        </Button>
+      </div>
+    </div>
+  );
+  
+  const MessageItem = ({ message }: { message: any }) => {
+    const isCurrentUser = message.sender.id === 'me';
+    
+    return (
+      <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} mb-4`}>
+        <div className="flex gap-2 max-w-[80%]">
+          {!isCurrentUser && (
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={message.sender.avatar} />
+              <AvatarFallback>{message.sender.name.charAt(0)}</AvatarFallback>
+            </Avatar>
+          )}
+          
+          <div className={`flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'}`}>
+            <div 
+              className={`rounded-lg p-3 ${
+                isCurrentUser 
+                  ? 'bg-primary text-primary-foreground rounded-br-none' 
+                  : 'bg-muted rounded-bl-none'
+              }`}
+            >
+              {message.isVoice ? (
+                <audio src={message.voiceUrl} controls className="max-w-[200px]" />
               ) : (
-                chat.lastSeen
+                <p className="whitespace-pre-wrap">{message.content}</p>
               )}
             </div>
+            
+            <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+              {formatMessageTime(message.timestamp)}
+              {isCurrentUser && renderMessageStatus(message.status)}
+            </div>
           </div>
-        </div>
-        <div className="flex items-center space-x-1">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/calls')}>
-            <Phone className="h-5 w-5" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => navigate('/video-calls')}>
-            <Video className="h-5 w-5" />
-          </Button>
-          <Button variant="ghost" size="icon">
-            <MoreVertical className="h-5 w-5" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Chat messages */}
-      <div 
-        ref={chatContainerRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4"
-      >
-        {messages.map((msg) => {
-          const isMe = msg.sender === 'me';
           
-          return (
-            <div 
-              key={msg.id} 
-              className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
-            >
-              <div className={`max-w-[80%] ${isMe ? 'bg-primary text-primary-foreground' : 'bg-muted'} rounded-2xl p-3 px-4 ${isMe ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}>
-                {msg.type === 'audio' && (
-                  <div className="flex items-center space-x-2 min-w-[200px]">
-                    <Button variant={isMe ? "secondary" : "outline"} size="icon" className="h-8 w-8">
-                      <Mic className="h-4 w-4" />
-                    </Button>
-                    <div className="flex-1">
-                      <Progress value={45} className="h-1.5" />
-                      <div className="flex justify-between text-xs mt-1">
-                        <span>0:00</span>
-                        <span>{msg.duration}s</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {msg.type === 'image' && (
-                  <div className="rounded-md overflow-hidden">
-                    <img 
-                      src={msg.imageUrl} 
-                      alt="Chat image" 
-                      className="max-w-full h-auto object-cover"
-                    />
-                  </div>
-                )}
-                
-                {!msg.type && <p>{msg.text}</p>}
-                
-                <div className={`text-xs mt-1 ${isMe ? 'text-primary-foreground/70' : 'text-muted-foreground'} flex justify-end items-center`}>
-                  {msg.time}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+          {isCurrentUser && (
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={message.sender.avatar} />
+              <AvatarFallback>{message.sender.name.charAt(0)}</AvatarFallback>
+            </Avatar>
+          )}
+        </div>
       </div>
-
-      {/* Image preview */}
-      {showImagePreview && (
-        <div className="p-3 border-t bg-card">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="text-sm font-medium">Image Preview</h3>
+    );
+  };
+  
+  return (
+    <div className="flex flex-col h-full">
+      <ChatHeader />
+      
+      <div className="flex-1 overflow-hidden">
+        <ScrollArea className="h-full p-4">
+          {messages.map((message) => (
+            <MessageItem key={message.id} message={message} />
+          ))}
+          <div ref={messagesEndRef} />
+        </ScrollArea>
+      </div>
+      
+      <div className="p-4 border-t flex items-end gap-2">
+        {isRecording ? (
+          <div className="flex-1 flex items-center gap-3 bg-muted/50 p-3 rounded-xl">
+            <span className="animate-pulse w-3 h-3 rounded-full bg-destructive"></span>
+            <span className="text-sm text-muted-foreground">Recording... {recordingDuration}s</span>
             <Button 
+              size="sm" 
               variant="ghost" 
-              size="icon" 
-              onClick={() => {
-                setShowImagePreview(false);
-                setPreviewImage('');
-              }}
+              onClick={() => setIsRecording(false)}
+              className="ml-auto"
             >
-              <X className="h-4 w-4" />
+              Cancel
             </Button>
           </div>
-          <div className="relative mb-3">
-            <img 
-              src={previewImage} 
-              alt="Preview" 
-              className="max-h-60 rounded-md object-contain mx-auto" 
-            />
-          </div>
-          <div className="flex justify-end">
-            <Button onClick={handleSendImage}>
-              <Send className="h-4 w-4 mr-2" />
-              Send Image
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Attachment menu */}
-      {showAttachMenu && (
-        <div className="p-3 border-t bg-card">
-          <div className="flex space-x-4">
-            <div 
-              className="flex flex-col items-center cursor-pointer"
-              onClick={triggerFilePicker}
-            >
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <ImageIcon className="h-6 w-6 text-primary" />
-              </div>
-              <span className="text-xs mt-1">Image</span>
-            </div>
-            
-            <div className="flex flex-col items-center cursor-pointer">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <Paperclip className="h-6 w-6 text-primary" />
-              </div>
-              <span className="text-xs mt-1">Document</span>
-            </div>
-            
-            <div className="flex flex-col items-center cursor-pointer">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <User className="h-6 w-6 text-primary" />
-              </div>
-              <span className="text-xs mt-1">Contact</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Chat input */}
-      {isRecording ? (
-        <div className="p-3 border-t bg-card">
-          <div className="flex items-center">
-            <div className="flex-1 bg-muted rounded-md p-3">
-              <div className="flex items-center">
-                <Badge variant="destructive" className="animate-pulse mr-2">
-                  Recording
-                </Badge>
-                <div className="flex-1">
-                  <Progress value={45} className="h-1.5" />
-                </div>
-                <span className="text-sm ml-2">0:15</span>
-              </div>
-            </div>
-            
-            <div className="flex ml-2">
-              <Button 
-                variant="destructive"
-                size="icon" 
-                className="rounded-full"
-                onClick={handleCancelRecording}
-              >
-                <X className="h-5 w-5" />
-              </Button>
-              <Button 
-                variant="default"
-                size="icon" 
-                className="rounded-full ml-2"
-              >
-                <Send className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="p-3 border-t bg-card">
-          <div className="flex items-center">
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              className="hidden" 
-              accept="image/*"
-              onChange={handleFileSelected}
-            />
-            
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => setShowAttachMenu(!showAttachMenu)}
-            >
-              <Paperclip className="h-5 w-5" />
-            </Button>
-            
-            <div className="flex-1 mx-2">
-              <Input
-                placeholder="Type a message..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="bg-muted border-0"
-              />
-            </div>
-            
-            {message.trim() ? (
-              <Button 
-                size="icon" 
-                className="rounded-full"
-                onClick={handleSendMessage}
-              >
-                <Send className="h-5 w-5" />
-              </Button>
-            ) : (
-              <VoiceRecorder 
-                onRecordingComplete={handleRecordingComplete}
-                onRecordingStart={() => setIsRecording(true)}
-              />
-            )}
-          </div>
-        </div>
-      )}
+        ) : (
+          <Textarea
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder="Type a message..."
+            className="flex-1 max-h-32"
+            onKeyDown={handleKeyDown}
+          />
+        )}
+        
+        {!isRecording && !newMessage && (
+          <Button 
+            onClick={() => setIsRecording(true)} 
+            size="icon" 
+            variant="ghost"
+          >
+            <Mic className="h-5 w-5" />
+          </Button>
+        )}
+        
+        {isRecording ? (
+          <VoiceRecorder 
+            onRecordComplete={handleVoiceMessageComplete}
+            onRecordStart={() => {}}
+          />
+        ) : (
+          <Button 
+            onClick={handleSendMessage} 
+            size="icon" 
+            disabled={!newMessage.trim() && !isRecording}
+          >
+            <SendHorizontal className="h-5 w-5" />
+          </Button>
+        )}
+      </div>
     </div>
   );
 };

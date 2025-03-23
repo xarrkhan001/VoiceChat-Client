@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { MessageSquare, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { MessageSquare, Mail, Lock, User, Eye, EyeOff, UserPlus, CheckCircle, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -63,11 +63,13 @@ const Signup = () => {
       </div>
       
       <div className="relative z-10 w-full max-w-md">
-        <div className="flex justify-center mb-8">
-          <div className="p-3 rounded-full bg-primary/10">
-            <MessageSquare className="h-10 w-10 text-primary" />
+        <Link to="/" className="block">
+          <div className="flex justify-center mb-8">
+            <div className="p-3 rounded-full bg-gradient-to-br from-primary/20 to-primary/5">
+              <MessageSquare className="h-10 w-10 text-primary" />
+            </div>
           </div>
-        </div>
+        </Link>
         
         <Card className="border-none shadow-lg bg-card/90 backdrop-blur-sm">
           <CardHeader className="text-center">
@@ -156,8 +158,25 @@ const Signup = () => {
                 </Label>
               </div>
               
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Creating Account...' : 'Create Account'}
+              <div className="p-3 bg-primary/5 rounded-lg space-y-2 mb-4">
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">Your data is secure with us</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  We use industry-standard encryption to protect your personal information.
+                </p>
+              </div>
+              
+              <Button type="submit" className="w-full gap-2" disabled={isLoading}>
+                {isLoading ? (
+                  <>Creating Account...</>
+                ) : (
+                  <>
+                    <UserPlus className="h-4 w-4" />
+                    Create Account
+                  </>
+                )}
               </Button>
             </form>
           </CardContent>
