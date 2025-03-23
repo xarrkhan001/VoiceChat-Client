@@ -29,9 +29,21 @@ const Login = () => {
     
     // Simulate API call
     setTimeout(() => {
+      // Extract a name from the email for demo purposes
+      const userName = email.split('@')[0]
+        .split('.')
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+      
       // For demo purposes, set authentication in localStorage
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('userEmail', email);
+      localStorage.setItem('userName', userName);
+      
+      // Set a default avatar if none exists
+      if (!localStorage.getItem('userAvatar')) {
+        localStorage.setItem('userAvatar', 'https://i.pravatar.cc/150?img=3');
+      }
       
       toast.success('Login successful');
       setIsLoading(false);

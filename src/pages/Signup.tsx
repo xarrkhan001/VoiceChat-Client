@@ -11,23 +11,29 @@ import { toast } from 'sonner';
 
 const Signup = () => {
   const navigate = useNavigate();
-  const [name, setName] = useState('');
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || !email || !password) {
+    if (!fullName || !email || !password || !confirmPassword) {
       toast.error('Please fill in all fields');
       return;
     }
     
-    if (!agreeTerms) {
-      toast.error('Please agree to the terms and conditions');
+    if (password !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+    
+    if (!acceptTerms) {
+      toast.error('Please accept the terms and conditions');
       return;
     }
     
@@ -35,10 +41,13 @@ const Signup = () => {
     
     // Simulate API call
     setTimeout(() => {
-      // For demo purposes, we'll set authentication and navigate to chats
+      // For demo purposes, set authentication in localStorage
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('userEmail', email);
-      localStorage.setItem('userName', name);
+      localStorage.setItem('userName', fullName);
+      
+      // Set a default avatar
+      localStorage.setItem('userAvatar', 'https://i.pravatar.cc/150?img=3');
       
       toast.success('Account created successfully');
       setIsLoading(false);
@@ -63,7 +72,7 @@ const Signup = () => {
         <Card className="border-none shadow-lg bg-card/90 backdrop-blur-sm">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
-            <p className="text-muted-foreground mt-2">Sign up to get started with Chat Wave</p>
+            <p className="text-muted-foreground mt-2">Join our chat community today</p>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSignup} className="space-y-4">
@@ -76,8 +85,8 @@ const Signup = () => {
                     type="text"
                     placeholder="John Doe"
                     className="pl-10"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
                   />
                 </div>
               </div>
@@ -121,10 +130,29 @@ const Signup = () => {
                 </div>
               </div>
               
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    id="confirmPassword"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    className="pl-10"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                </div>
+              </div>
+              
               <div className="flex items-center space-x-2">
-                <Checkbox id="terms" checked={agreeTerms} onCheckedChange={(checked) => setAgreeTerms(checked as boolean)} />
+                <Checkbox 
+                  id="terms" 
+                  checked={acceptTerms} 
+                  onCheckedChange={(checked) => setAcceptTerms(checked as boolean)} 
+                />
                 <Label htmlFor="terms" className="text-sm font-normal">
-                  I agree to the <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link> and <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
+                  I accept the <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link> and <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
                 </Label>
               </div>
               

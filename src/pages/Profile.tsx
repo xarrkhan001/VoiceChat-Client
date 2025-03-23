@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Edit, Save, Pencil, ChevronRight, Paperclip, Upload } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -31,8 +31,39 @@ const Profile = () => {
     readReceipts: true,
   });
 
+  // Load profile data from localStorage on component mount
+  useEffect(() => {
+    const storedEmail = localStorage.getItem('userEmail');
+    const storedName = localStorage.getItem('userName');
+    const storedAvatar = localStorage.getItem('userAvatar');
+    
+    if (storedEmail) {
+      setProfileData(prevData => ({
+        ...prevData,
+        email: storedEmail
+      }));
+    }
+    
+    if (storedName) {
+      setProfileData(prevData => ({
+        ...prevData,
+        name: storedName
+      }));
+    }
+    
+    if (storedAvatar) {
+      setProfileImage(storedAvatar);
+    }
+  }, []);
+
   const handleSaveProfile = () => {
     setIsEditing(false);
+    
+    // Save to localStorage
+    localStorage.setItem('userName', profileData.name);
+    localStorage.setItem('userEmail', profileData.email);
+    localStorage.setItem('userAvatar', profileImage);
+    
     toast({
       title: "Profile updated",
       description: "Your profile has been updated successfully.",
@@ -63,7 +94,9 @@ const Profile = () => {
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
-          setProfileImage(event.target.result as string);
+          const newAvatar = event.target.result as string;
+          setProfileImage(newAvatar);
+          localStorage.setItem('userAvatar', newAvatar);
           setShowPhotoDialog(false);
           toast({
             title: "Photo updated",
@@ -77,6 +110,17 @@ const Profile = () => {
 
   const triggerFileInput = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleAvatarSelect = (imgNum: number) => {
+    const newAvatar = `https://i.pravatar.cc/150?img=${imgNum}`;
+    setProfileImage(newAvatar);
+    localStorage.setItem('userAvatar', newAvatar);
+    setShowPhotoDialog(false);
+    toast({
+      title: "Avatar selected",
+      description: "Your profile avatar has been updated.",
+    });
   };
 
   return (
@@ -102,7 +146,7 @@ const Profile = () => {
           <div className="relative mb-4">
             <Avatar className="h-24 w-24 border-4 border-background cursor-pointer" onClick={handlePhotoClick}>
               <AvatarImage src={profileImage} />
-              <AvatarFallback>JD</AvatarFallback>
+              <AvatarFallback>{profileData.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div 
               className="absolute bottom-0 right-0 bg-primary rounded-full p-1.5 border-2 border-background cursor-pointer"
@@ -148,7 +192,7 @@ const Profile = () => {
               <div className="flex flex-col items-center gap-4">
                 <Avatar className="h-32 w-32 border-4 border-background">
                   <AvatarImage src={profileImage} />
-                  <AvatarFallback>JD</AvatarFallback>
+                  <AvatarFallback>{profileData.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <input
                   type="file"
@@ -167,14 +211,7 @@ const Profile = () => {
                   <Avatar 
                     key={num} 
                     className="h-16 w-16 cursor-pointer border-2 hover:border-primary transition-all"
-                    onClick={() => {
-                      setProfileImage(`https://i.pravatar.cc/150?img=${num}`);
-                      setShowPhotoDialog(false);
-                      toast({
-                        title: "Avatar selected",
-                        description: "Your profile avatar has been updated.",
-                      });
-                    }}
+                    onClick={() => handleAvatarSelect(num)}
                   >
                     <AvatarImage src={`https://i.pravatar.cc/150?img=${num}`} />
                     <AvatarFallback>{num}</AvatarFallback>

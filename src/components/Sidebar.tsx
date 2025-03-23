@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   MessageSquare, 
@@ -9,12 +9,15 @@ import {
   Image,
   User,
   Settings,
-  X
+  X,
+  LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ThemeToggle from './ThemeToggle';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 type SidebarProps = {
   onClose: () => void;
@@ -22,6 +25,12 @@ type SidebarProps = {
 
 const Sidebar = ({ onClose }: SidebarProps) => {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const [userData, setUserData] = useState({
+    name: 'User',
+    email: '',
+    avatar: 'https://i.pravatar.cc/150?img=3'
+  });
   
   const navigation = [
     { name: 'Chats', to: '/chats', icon: MessageSquare },
@@ -32,6 +41,25 @@ const Sidebar = ({ onClose }: SidebarProps) => {
     { name: 'Profile', to: '/profile', icon: User },
     { name: 'Settings', to: '/settings', icon: Settings },
   ];
+
+  // Load user data from localStorage
+  useEffect(() => {
+    const userEmail = localStorage.getItem('userEmail') || '';
+    const userName = localStorage.getItem('userName') || 'User';
+    const userAvatar = localStorage.getItem('userAvatar') || 'https://i.pravatar.cc/150?img=3';
+
+    setUserData({
+      name: userName,
+      email: userEmail,
+      avatar: userAvatar
+    });
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    toast.success('Successfully logged out');
+    navigate('/login');
+  };
 
   return (
     <div className="flex flex-col h-full bg-card border-r">
@@ -55,12 +83,12 @@ const Sidebar = ({ onClose }: SidebarProps) => {
       <div className="p-4">
         <div className="flex items-center space-x-3 mb-6">
           <Avatar className="h-12 w-12 border-2 border-primary/20">
-            <AvatarImage src="https://i.pravatar.cc/150?img=3" />
-            <AvatarFallback>JD</AvatarFallback>
+            <AvatarImage src={userData.avatar} />
+            <AvatarFallback>{userData.name.charAt(0)}</AvatarFallback>
           </Avatar>
           <div>
-            <div className="font-medium">Jane Doe</div>
-            <div className="text-sm text-muted-foreground">Online</div>
+            <div className="font-medium">{userData.name}</div>
+            <div className="text-sm text-muted-foreground">{userData.email || 'Online'}</div>
           </div>
         </div>
       
@@ -87,9 +115,9 @@ const Sidebar = ({ onClose }: SidebarProps) => {
             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
             <span className="text-sm">Active</span>
           </div>
-          <Button variant="outline" size="sm">
-            <Settings className="h-4 w-4 mr-1" />
-            <span>Status</span>
+          <Button variant="outline" size="sm" onClick={handleLogout}>
+            <LogOut className="h-4 w-4 mr-1" />
+            <span>Logout</span>
           </Button>
         </div>
       </div>
