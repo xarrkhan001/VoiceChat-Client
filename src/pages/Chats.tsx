@@ -31,7 +31,7 @@ const chatData = [
     id: '2',
     name: 'Bob Smith',
     avatar: 'https://i.pravatar.cc/150?img=2',
-    lastMessage: 'I've sent you the documents 📄',
+    lastMessage: "I've sent you the documents 📄",
     time: 'Yesterday',
     unread: 0,
     online: false,
