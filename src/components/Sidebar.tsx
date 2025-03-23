@@ -14,6 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import ThemeToggle from './ThemeToggle';
 
 type SidebarProps = {
   onClose: () => void;
@@ -41,11 +42,14 @@ const Sidebar = ({ onClose }: SidebarProps) => {
           </div>
           <span className="text-xl font-semibold">Chat Wave</span>
         </div>
-        {isMobile && (
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-5 w-5" />
-          </Button>
-        )}
+        <div className="flex items-center space-x-1">
+          <ThemeToggle />
+          {isMobile && (
+            <Button variant="ghost" size="icon" onClick={onClose}>
+              <X className="h-5 w-5" />
+            </Button>
+          )}
+        </div>
       </div>
       
       <div className="p-4">

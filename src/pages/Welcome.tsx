@@ -1,20 +1,21 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { MessageSquare, Headphones, Video, Camera, User, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const Welcome = () => {
   const navigate = useNavigate();
 
   const features = [
-    { title: 'Instant Messaging', icon: MessageSquare, color: 'from-blue-400 to-blue-600' },
-    { title: 'Voice Messages', icon: Headphones, color: 'from-green-400 to-green-600' },
-    { title: 'Video Calls', icon: Video, color: 'from-purple-400 to-purple-600' },
-    { title: 'Share Stories', icon: Camera, color: 'from-amber-400 to-amber-600' },
-    { title: 'Customizable Profile', icon: User, color: 'from-pink-400 to-pink-600' },
-    { title: 'Connect Globally', icon: Globe, color: 'from-cyan-400 to-cyan-600' },
+    { title: 'Instant Messaging', icon: MessageSquare, color: 'from-blue-500 to-blue-700' },
+    { title: 'Voice Messages', icon: Headphones, color: 'from-green-500 to-green-700' },
+    { title: 'Video Calls', icon: Video, color: 'from-purple-500 to-purple-700' },
+    { title: 'Share Stories', icon: Camera, color: 'from-amber-500 to-amber-700' },
+    { title: 'Customizable Profile', icon: User, color: 'from-pink-500 to-pink-700' },
+    { title: 'Connect Globally', icon: Globe, color: 'from-cyan-500 to-cyan-700' },
   ];
 
   const containerVariants = {
@@ -37,12 +38,31 @@ const Welcome = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background overflow-hidden">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-background/80 overflow-hidden">
       {/* Background Elements */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <div className="absolute top-[-15%] right-[-5%] h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
         <div className="absolute bottom-[-15%] left-[-5%] h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
       </div>
+      
+      {/* Header */}
+      <header className="relative z-10 p-4 flex justify-between items-center">
+        <div className="flex items-center space-x-2">
+          <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center">
+            <MessageSquare className="h-5 w-5 text-white" />
+          </div>
+          <span className="text-xl font-semibold">Chat Wave</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <ThemeToggle />
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/login">Sign In</Link>
+          </Button>
+          <Button size="sm" asChild>
+            <Link to="/signup">Sign Up</Link>
+          </Button>
+        </div>
+      </header>
       
       {/* Content */}
       <div className="container relative z-10 mx-auto px-4 py-12 flex-1 flex flex-col items-center justify-center max-w-5xl">
@@ -50,12 +70,12 @@ const Welcome = () => {
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-8"
+          className="text-center mb-12"
         >
-          <div className="mb-4 inline-flex p-2 bg-primary/10 rounded-lg">
-            <MessageSquare className="h-10 w-10 text-primary" />
+          <div className="mb-6 inline-flex p-4 bg-primary/10 rounded-full">
+            <MessageSquare className="h-12 w-12 text-primary" />
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Welcome to Chat Wave</h1>
+          <h1 className="text-4xl md:text-6xl font-bold mb-4">Welcome to Chat Wave</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             A modern messaging platform with everything you need to stay connected
           </p>
@@ -87,11 +107,11 @@ const Welcome = () => {
           transition={{ delay: 0.8 }}
           className="flex flex-col sm:flex-row gap-4"
         >
-          <Button size="lg" onClick={() => navigate('/chats')} className="px-8">
+          <Button size="lg" onClick={() => navigate('/signup')} className="px-8">
             Get Started
           </Button>
-          <Button variant="outline" size="lg" onClick={() => window.open('#', '_blank')} className="px-8">
-            Learn More
+          <Button variant="outline" size="lg" onClick={() => navigate('/login')} className="px-8">
+            Sign In
           </Button>
         </motion.div>
       </div>

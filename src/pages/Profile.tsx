@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Camera, Edit, Save, Pencil, ChevronRight } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -249,7 +248,7 @@ const Profile = () => {
                   <Switch
                     id="theme"
                     checked={profileData.theme === 'dark'}
-                    onCheckedChange={(checked) => handleToggleChange('theme', checked ? 'dark' : 'light')}
+                    onCheckedChange={(checked) => handleToggleChange('theme', checked)}
                   />
                 </div>
 
