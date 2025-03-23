@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Camera, Edit, Save, Pencil, ChevronRight } from 'lucide-react';
+
+import React, { useState, useRef } from 'react';
+import { Camera, Edit, Save, Pencil, ChevronRight, Paperclip, Upload } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,9 +11,13 @@ import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
+  const [profileImage, setProfileImage] = useState('https://i.pravatar.cc/150?img=3');
+  const [showPhotoDialog, setShowPhotoDialog] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [profileData, setProfileData] = useState({
     name: 'Jane Doe',
     username: 'jane_doe',
@@ -49,6 +54,31 @@ const Profile = () => {
     });
   };
 
+  const handlePhotoClick = () => {
+    setShowPhotoDialog(true);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setProfileImage(event.target.result as string);
+          setShowPhotoDialog(false);
+          toast({
+            title: "Photo updated",
+            description: "Your profile photo has been updated successfully.",
+          });
+        }
+      };
+      reader.readAsDataURL(e.target.files[0]);
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
   return (
     <div className="flex flex-col h-full overflow-y-auto pb-8">
       <div className="p-4 border-b bg-card sticky top-0 z-10">
@@ -70,11 +100,14 @@ const Profile = () => {
       <div className="px-4 py-6">
         <div className="flex flex-col items-center mb-8">
           <div className="relative mb-4">
-            <Avatar className="h-24 w-24 border-4 border-background">
-              <AvatarImage src="https://i.pravatar.cc/150?img=3" />
+            <Avatar className="h-24 w-24 border-4 border-background cursor-pointer" onClick={handlePhotoClick}>
+              <AvatarImage src={profileImage} />
               <AvatarFallback>JD</AvatarFallback>
             </Avatar>
-            <div className="absolute bottom-0 right-0 bg-primary rounded-full p-1.5 border-2 border-background">
+            <div 
+              className="absolute bottom-0 right-0 bg-primary rounded-full p-1.5 border-2 border-background cursor-pointer"
+              onClick={handlePhotoClick}
+            >
               <Camera className="h-4 w-4 text-white" />
             </div>
           </div>
@@ -101,6 +134,61 @@ const Profile = () => {
             </div>
           )}
         </div>
+
+        {/* Photo Update Dialog */}
+        <Dialog open={showPhotoDialog} onOpenChange={setShowPhotoDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Update Profile Photo</DialogTitle>
+              <DialogDescription>
+                Choose a new profile photo or upload one from your device.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="flex flex-col items-center gap-4">
+                <Avatar className="h-32 w-32 border-4 border-background">
+                  <AvatarImage src={profileImage} />
+                  <AvatarFallback>JD</AvatarFallback>
+                </Avatar>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                />
+                <Button onClick={triggerFileInput} className="w-full">
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload Photo
+                </Button>
+              </div>
+              <div className="grid grid-cols-4 gap-2 mt-2">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
+                  <Avatar 
+                    key={num} 
+                    className="h-16 w-16 cursor-pointer border-2 hover:border-primary transition-all"
+                    onClick={() => {
+                      setProfileImage(`https://i.pravatar.cc/150?img=${num}`);
+                      setShowPhotoDialog(false);
+                      toast({
+                        title: "Avatar selected",
+                        description: "Your profile avatar has been updated.",
+                      });
+                    }}
+                  >
+                    <AvatarImage src={`https://i.pravatar.cc/150?img=${num}`} />
+                    <AvatarFallback>{num}</AvatarFallback>
+                  </Avatar>
+                ))}
+              </div>
+            </div>
+            <DialogFooter className="sm:justify-end">
+              <Button variant="secondary" onClick={() => setShowPhotoDialog(false)}>
+                Cancel
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <Tabs defaultValue="profile" className="w-full max-w-3xl mx-auto">
           <TabsList className="w-full mb-6">

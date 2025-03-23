@@ -16,6 +16,7 @@ const Signup = () => {
   const [password, setPassword] = useState('');
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,9 +31,19 @@ const Signup = () => {
       return;
     }
     
-    // For demo purposes, we'll just navigate to the login page
-    toast.success('Account created successfully');
-    navigate('/login');
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      // For demo purposes, we'll set authentication and navigate to chats
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('userEmail', email);
+      localStorage.setItem('userName', name);
+      
+      toast.success('Account created successfully');
+      setIsLoading(false);
+      navigate('/chats');
+    }, 1500);
   };
 
   return (
@@ -117,7 +128,9 @@ const Signup = () => {
                 </Label>
               </div>
               
-              <Button type="submit" className="w-full">Create Account</Button>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? 'Creating Account...' : 'Create Account'}
+              </Button>
             </form>
           </CardContent>
           <CardFooter className="flex justify-center border-t px-6 py-4">

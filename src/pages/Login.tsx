@@ -15,6 +15,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,9 +25,18 @@ const Login = () => {
       return;
     }
     
-    // For demo purposes, we'll just navigate to the chats page
-    toast.success('Login successful');
-    navigate('/chats');
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      // For demo purposes, set authentication in localStorage
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('userEmail', email);
+      
+      toast.success('Login successful');
+      setIsLoading(false);
+      navigate('/chats');
+    }, 1500);
   };
 
   return (
@@ -99,7 +109,23 @@ const Login = () => {
                 <Label htmlFor="remember" className="text-sm font-normal">Remember me</Label>
               </div>
               
-              <Button type="submit" className="w-full">Sign In</Button>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? 'Signing in...' : 'Sign In'}
+              </Button>
+              
+              {/* Demo shortcut for testing */}
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="w-full" 
+                onClick={() => {
+                  setEmail('demo@example.com');
+                  setPassword('password');
+                  toast.info('Demo credentials filled in. Click Sign In to continue.');
+                }}
+              >
+                Use Demo Account
+              </Button>
             </form>
           </CardContent>
           <CardFooter className="flex justify-center border-t px-6 py-4">
