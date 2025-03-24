@@ -68,7 +68,7 @@ const Sidebar = ({ onClose }: SidebarProps) => {
           <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center">
             <MessageSquare className="h-5 w-5 text-white" />
           </div>
-          <span className="text-xl font-semibold">Chat Wave</span>
+          <span className="text-xl font-semibold">ChatterBox</span>
         </div>
         <div className="flex items-center space-x-1">
           <ThemeToggle />
@@ -98,7 +98,11 @@ const Sidebar = ({ onClose }: SidebarProps) => {
               key={item.name}
               to={item.to}
               className={({ isActive }) => 
-                `nav-item ${isActive ? 'nav-item-active' : ''}`
+                `flex items-center space-x-2 px-3 py-2 rounded-md text-sm ${
+                  isActive 
+                    ? 'bg-primary/10 text-primary font-medium' 
+                    : 'text-foreground hover:bg-muted/70'
+                }`
               }
               onClick={isMobile ? onClose : undefined}
             >
