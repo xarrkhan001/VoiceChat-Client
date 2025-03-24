@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Plus, MoreVertical, Image as ImageIcon, Smile, Send, X, ArrowLeft, ArrowRight, Camera, Video as VideoIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -20,11 +20,34 @@ const Stories = () => {
   const { toast } = useToast();
   const [showStoryUpload, setShowStoryUpload] = useState(false);
   
+  // Check if user has their own story
+  useEffect(() => {
+    const userName = localStorage.getItem('userName') || 'User';
+    const userAvatar = localStorage.getItem('userAvatar') || 'https://i.pravatar.cc/150?img=3';
+    
+    // If user doesn't have a story entry yet, create one
+    if (!stories.some(s => s.user.id === 'me')) {
+      setStories(prevStories => [
+        {
+          id: 'my-story',
+          user: {
+            id: 'me',
+            name: userName,
+            avatar: userAvatar
+          },
+          stories: [],
+          isYourStory: true
+        },
+        ...prevStories
+      ]);
+    }
+  }, []);
+  
   const filteredStories = stories.filter(story => 
     story.user.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleAddStory = (url: string, type: 'image' | 'video') => {
+  const handleAddStory = (url: string, type: 'image' | 'video', duration?: number) => {
     const myStoryIndex = stories.findIndex(s => s.user.id === 'me');
     
     if (myStoryIndex !== -1) {
@@ -39,6 +62,7 @@ const Stories = () => {
             type,
             url,
             timestamp: 'Just now',
+            duration: duration || 5 // Default 5 seconds for images, actual duration for videos
           }
         ]
       };
@@ -98,8 +122,8 @@ const Stories = () => {
               
               <StoryUploader 
                 type="video" 
-                onUploadComplete={(url) => {
-                  handleAddStory(url, 'video');
+                onUploadComplete={(url, duration) => {
+                  handleAddStory(url, 'video', duration);
                   setShowStoryUpload(false);
                 }} 
               />
@@ -121,11 +145,12 @@ const Stories = () => {
 
 interface StoryUploaderProps {
   type: 'image' | 'video';
-  onUploadComplete: (url: string) => void;
+  onUploadComplete: (url: string, duration?: number) => void;
 }
 
 const StoryUploader: React.FC<StoryUploaderProps> = ({ type, onUploadComplete }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const { toast } = useToast();
@@ -158,7 +183,22 @@ const StoryUploader: React.FC<StoryUploaderProps> = ({ type, onUploadComplete })
           
           // Create object URL for the selected file
           const url = URL.createObjectURL(file);
-          onUploadComplete(url);
+          
+          if (type === 'video') {
+            // Create a temporary video element to get the duration
+            const video = document.createElement('video');
+            video.preload = 'metadata';
+            video.onloadedmetadata = () => {
+              onUploadComplete(url, video.duration);
+            };
+            video.onerror = () => {
+              // Fall back to default duration if we can't get the actual duration
+              onUploadComplete(url, 10);
+            };
+            video.src = url;
+          } else {
+            onUploadComplete(url);
+          }
           
           return 0;
         }
@@ -223,6 +263,7 @@ interface StoryCardProps {
       type: string;
       url: string;
       timestamp: string;
+      duration?: number;
     }[];
     isYourStory?: boolean;
   };
@@ -235,6 +276,9 @@ const StoryCard = ({ story }: StoryCardProps) => {
   const [open, setOpen] = useState(false);
   const [replyText, setReplyText] = useState('');
   const { toast } = useToast();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoDuration, setVideoDuration] = useState<number | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
   
   const hasStories = story.stories.length > 0;
   const activeStory = hasStories ? story.stories[activeStoryIndex] : null;
@@ -243,6 +287,7 @@ const StoryCard = ({ story }: StoryCardProps) => {
     if (activeStoryIndex < story.stories.length - 1) {
       setActiveStoryIndex(activeStoryIndex + 1);
       setProgress(0);
+      setIsPaused(false);
     } else {
       setOpen(false);
     }
@@ -252,6 +297,7 @@ const StoryCard = ({ story }: StoryCardProps) => {
     if (activeStoryIndex > 0) {
       setActiveStoryIndex(activeStoryIndex - 1);
       setProgress(0);
+      setIsPaused(false);
     }
   };
   
@@ -269,25 +315,58 @@ const StoryCard = ({ story }: StoryCardProps) => {
     setReplyText(prev => prev + emoji);
   };
   
+  const togglePause = () => {
+    if (activeStory?.type === 'video' && videoRef.current) {
+      if (videoRef.current.paused) {
+        videoRef.current.play();
+        setIsPaused(false);
+      } else {
+        videoRef.current.pause();
+        setIsPaused(true);
+      }
+    } else {
+      setIsPaused(!isPaused);
+    }
+  };
+  
+  // Handle video loading
+  useEffect(() => {
+    if (open && activeStory?.type === 'video' && videoRef.current) {
+      videoRef.current.onloadedmetadata = () => {
+        if (videoRef.current) {
+          setVideoDuration(videoRef.current.duration);
+          videoRef.current.play().catch(err => console.error("Video play error:", err));
+        }
+      };
+    }
+  }, [open, activeStory, activeStoryIndex]);
+  
   // Progress timer
-  React.useEffect(() => {
+  useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (open && hasStories) {
+    if (open && hasStories && !isPaused) {
+      const storyDuration = activeStory?.type === 'video' 
+        ? (videoDuration || activeStory.duration || 10) * 1000 
+        : (activeStory?.duration || 5) * 1000;
+        
+      const interval = 50; // Update every 50ms for smooth progress
+      const increment = (interval / storyDuration) * 100;
+      
       timer = setInterval(() => {
         setProgress(prev => {
           if (prev >= 100) {
             handleNextStory();
             return 0;
           }
-          return prev + 1;
+          return prev + increment;
         });
-      }, 50);
+      }, interval);
     }
     
     return () => {
       clearInterval(timer);
     };
-  }, [open, activeStoryIndex, hasStories]);
+  }, [open, activeStoryIndex, hasStories, isPaused, videoDuration, activeStory]);
   
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -373,11 +452,10 @@ const StoryCard = ({ story }: StoryCardProps) => {
             <div className="relative flex-1 flex items-center justify-center bg-black">
               {activeStory?.type === 'video' ? (
                 <video 
+                  ref={videoRef}
                   src={activeStory.url} 
-                  autoPlay 
-                  muted 
-                  loop 
                   className="max-h-full max-w-full object-contain"
+                  playsInline
                 />
               ) : (
                 <img 
@@ -387,10 +465,24 @@ const StoryCard = ({ story }: StoryCardProps) => {
                 />
               )}
               
+              {/* Pause indicator */}
+              {isPaused && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                  <div className="h-16 w-16 rounded-full bg-white/20 flex items-center justify-center">
+                    <div className="h-14 w-14 rounded-full bg-white/40 flex items-center justify-center">
+                      <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center">
+                        <Play className="h-6 w-6 text-black" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               {/* Story controls */}
               <div className="absolute inset-0 flex">
-                <div className="w-1/2" onClick={handlePrevStory}></div>
-                <div className="w-1/2" onClick={handleNextStory}></div>
+                <div className="w-1/3" onClick={handlePrevStory}></div>
+                <div className="w-1/3" onClick={togglePause}></div>
+                <div className="w-1/3" onClick={handleNextStory}></div>
               </div>
             </div>
             
@@ -422,5 +514,21 @@ const StoryCard = ({ story }: StoryCardProps) => {
     </Dialog>
   );
 };
+
+// Missing Play icon
+const Play = ({ className }: { className?: string }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+  </svg>
+);
 
 export default Stories;

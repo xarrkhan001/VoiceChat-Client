@@ -1,12 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { MessageSquare, Mail, Lock, User, Eye, EyeOff, UserPlus, CheckCircle, Shield } from 'lucide-react';
+import { MessageSquare, Mail, Lock, User, Eye, EyeOff, UserPlus, CheckCircle, Shield, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 
 const Signup = () => {
@@ -18,12 +19,30 @@ const Signup = () => {
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setAvatarUrl(event.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!fullName || !email || !password || !confirmPassword) {
-      toast.error('Please fill in all fields');
+      toast.error('Please fill in all required fields');
       return;
     }
     
@@ -46,13 +65,25 @@ const Signup = () => {
       localStorage.setItem('userEmail', email);
       localStorage.setItem('userName', fullName);
       
-      // Set a default avatar
-      localStorage.setItem('userAvatar', 'https://i.pravatar.cc/150?img=3');
+      // Save the avatar URL
+      if (avatarUrl) {
+        localStorage.setItem('userAvatar', avatarUrl);
+      } else {
+        // Set a default avatar
+        localStorage.setItem('userAvatar', 'https://i.pravatar.cc/150?img=3');
+      }
       
       toast.success('Account created successfully');
       setIsLoading(false);
       navigate('/chats');
     }, 1500);
+  };
+
+  const clearAvatar = () => {
+    setAvatarUrl('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
@@ -78,6 +109,50 @@ const Signup = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSignup} className="space-y-4">
+              <div className="flex flex-col items-center mb-6">
+                <div className="relative">
+                  <Avatar className="h-24 w-24 border-2 border-primary/20 cursor-pointer mb-2 hover:opacity-90 transition-opacity" onClick={() => fileInputRef.current?.click()}>
+                    {avatarUrl ? (
+                      <AvatarImage src={avatarUrl} alt="Avatar preview" />
+                    ) : (
+                      <>
+                        <AvatarFallback className="bg-muted">
+                          <User className="h-10 w-10 text-muted-foreground" />
+                        </AvatarFallback>
+                      </>
+                    )}
+                  </Avatar>
+                  {avatarUrl && (
+                    <Button 
+                      type="button" 
+                      variant="secondary" 
+                      size="icon" 
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                      onClick={clearAvatar}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                />
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-1 text-xs"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="h-3 w-3 mr-1" /> 
+                  {avatarUrl ? 'Change Photo' : 'Upload Photo'}
+                </Button>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
                 <div className="relative">
