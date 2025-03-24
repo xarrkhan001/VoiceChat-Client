@@ -33,7 +33,9 @@ const Signup = () => {
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      setAvatarUrl(event.target?.result as string);
+      if (event.target?.result) {
+        setAvatarUrl(event.target.result as string);
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -70,7 +72,7 @@ const Signup = () => {
         localStorage.setItem('userAvatar', avatarUrl);
       } else {
         // Set a default avatar
-        localStorage.setItem('userAvatar', 'https://i.pravatar.cc/150?img=3');
+        localStorage.setItem('userAvatar', `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 8) + 1}`);
       }
       
       toast.success('Account created successfully');
@@ -104,7 +106,7 @@ const Signup = () => {
         
         <Card className="border-none shadow-lg bg-card/90 backdrop-blur-sm">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
+            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">Create an account</CardTitle>
             <p className="text-muted-foreground mt-2">Join our chat community today</p>
           </CardHeader>
           <CardContent>
@@ -243,7 +245,7 @@ const Signup = () => {
                 </p>
               </div>
               
-              <Button type="submit" className="w-full gap-2" disabled={isLoading}>
+              <Button type="submit" className="w-full gap-2 bg-gradient-to-r from-primary to-primary/90 hover:opacity-90" disabled={isLoading}>
                 {isLoading ? (
                   <>Creating Account...</>
                 ) : (

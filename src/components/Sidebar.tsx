@@ -57,6 +57,9 @@ const Sidebar = ({ onClose }: SidebarProps) => {
 
   const handleLogout = () => {
     localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userAvatar');
     toast.success('Successfully logged out');
     navigate('/login');
   };
@@ -68,7 +71,7 @@ const Sidebar = ({ onClose }: SidebarProps) => {
           <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center">
             <MessageSquare className="h-5 w-5 text-white" />
           </div>
-          <span className="text-xl font-semibold">ChatterBox</span>
+          <span className="text-xl font-semibold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">ChatterBox</span>
         </div>
         <div className="flex items-center space-x-1">
           <ThemeToggle />
@@ -81,14 +84,16 @@ const Sidebar = ({ onClose }: SidebarProps) => {
       </div>
       
       <div className="p-4">
-        <div className="flex items-center space-x-3 mb-6">
-          <Avatar className="h-12 w-12 border-2 border-primary/20">
-            <AvatarImage src={userData.avatar} />
-            <AvatarFallback>{userData.name.charAt(0)}</AvatarFallback>
+        <div className="flex items-center space-x-3 mb-6 bg-muted/30 p-3 rounded-lg">
+          <Avatar className="h-14 w-14 border-2 border-primary/20 ring-2 ring-primary/10 ring-offset-2 ring-offset-background">
+            <AvatarImage src={userData.avatar} alt={userData.name} />
+            <AvatarFallback className="bg-primary/10 text-primary font-medium">
+              {userData.name.charAt(0)}
+            </AvatarFallback>
           </Avatar>
           <div>
-            <div className="font-medium">{userData.name}</div>
-            <div className="text-sm text-muted-foreground">{userData.email || 'Online'}</div>
+            <div className="font-medium text-foreground">{userData.name}</div>
+            <div className="text-sm text-muted-foreground truncate max-w-[140px]">{userData.email || 'Online'}</div>
           </div>
         </div>
       
@@ -98,7 +103,7 @@ const Sidebar = ({ onClose }: SidebarProps) => {
               key={item.name}
               to={item.to}
               className={({ isActive }) => 
-                `flex items-center space-x-2 px-3 py-2 rounded-md text-sm ${
+                `flex items-center space-x-2 px-3 py-2 rounded-md text-sm transition-colors duration-200 ${
                   isActive 
                     ? 'bg-primary/10 text-primary font-medium' 
                     : 'text-foreground hover:bg-muted/70'
@@ -119,7 +124,7 @@ const Sidebar = ({ onClose }: SidebarProps) => {
             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
             <span className="text-sm">Active</span>
           </div>
-          <Button variant="outline" size="sm" onClick={handleLogout}>
+          <Button variant="outline" size="sm" onClick={handleLogout} className="hover:bg-destructive/10 hover:text-destructive">
             <LogOut className="h-4 w-4 mr-1" />
             <span>Logout</span>
           </Button>

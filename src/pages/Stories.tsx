@@ -279,6 +279,7 @@ const StoryCard = ({ story }: StoryCardProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoDuration, setVideoDuration] = useState<number | null>(null);
   const [isPaused, setIsPaused] = useState(false);
+  const [videoMuted, setVideoMuted] = useState(false);
   
   const hasStories = story.stories.length > 0;
   const activeStory = hasStories ? story.stories[activeStoryIndex] : null;
@@ -318,7 +319,7 @@ const StoryCard = ({ story }: StoryCardProps) => {
   const togglePause = () => {
     if (activeStory?.type === 'video' && videoRef.current) {
       if (videoRef.current.paused) {
-        videoRef.current.play();
+        videoRef.current.play().catch(err => console.error("Video play error:", err));
         setIsPaused(false);
       } else {
         videoRef.current.pause();
@@ -329,14 +330,42 @@ const StoryCard = ({ story }: StoryCardProps) => {
     }
   };
   
-  // Handle video loading
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (videoRef.current) {
+      videoRef.current.muted = !videoRef.current.muted;
+      setVideoMuted(!videoMuted);
+    }
+  };
+  
+  // Handle video loading and autoplay
   useEffect(() => {
     if (open && activeStory?.type === 'video' && videoRef.current) {
+      // Configure video element
       videoRef.current.onloadedmetadata = () => {
         if (videoRef.current) {
           setVideoDuration(videoRef.current.duration);
-          videoRef.current.play().catch(err => console.error("Video play error:", err));
+          // Auto-play video when story is opened
+          videoRef.current.play()
+            .then(() => {
+              setIsPaused(false);
+            })
+            .catch(err => {
+              console.error("Video autoplay failed:", err);
+              // Some browsers block autoplay with sound
+              if (videoRef.current) {
+                videoRef.current.muted = true;
+                setVideoMuted(true);
+                // Try again with muted audio
+                videoRef.current.play().catch(err => console.error("Muted autoplay failed:", err));
+              }
+            });
         }
+      };
+      
+      // Handle video end
+      videoRef.current.onended = () => {
+        handleNextStory();
       };
     }
   }, [open, activeStory, activeStoryIndex]);
@@ -431,9 +460,26 @@ const StoryCard = ({ story }: StoryCardProps) => {
                     <div className="text-xs text-white/70">{activeStory?.timestamp}</div>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" className="text-white" onClick={() => setOpen(false)}>
-                  <X className="h-5 w-5" />
-                </Button>
+                <div className="flex items-center space-x-1">
+                  {activeStory?.type === 'video' && (
+                    <Button variant="ghost" size="icon" className="text-white" onClick={toggleMute}>
+                      {videoMuted ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="1" y1="1" x2="23" y2="23"></line>
+                          <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path>
+                          <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path>
+                        </svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M11 5L6 9H2v6h4l5 4zM22 9l-6 6M16 9l6 6"></path>
+                        </svg>
+                      )}
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="icon" className="text-white" onClick={() => setOpen(false)}>
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
               </div>
               
               {/* Progress bars */}
