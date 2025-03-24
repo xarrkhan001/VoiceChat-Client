@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -22,6 +21,11 @@ import { useToast } from '@/hooks/use-toast';
 import VoiceRecorder from '@/components/VoiceRecorder';
 import EmojiPicker from '@/components/EmojiPicker';
 import { mockContacts, generateMockMessages } from '@/lib/mockData';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from '@/components/ui/tooltip';
 
 const ChatDetail = () => {
   const { id } = useParams<{ id: string }>();
