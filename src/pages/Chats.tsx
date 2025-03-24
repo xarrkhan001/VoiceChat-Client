@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
+import { chatData, storiesData } from '@/lib/mockData';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,104 +18,31 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-// Mock data for chat list
-const chatData = [
-  {
-    id: '1',
-    name: 'Alice Johnson',
-    avatar: 'https://i.pravatar.cc/150?img=1',
-    lastMessage: 'Hey, are we still meeting today?',
-    time: '10:42 AM',
-    unread: 3,
-    online: true,
-  },
-  {
-    id: '2',
-    name: 'Bob Smith',
-    avatar: 'https://i.pravatar.cc/150?img=2',
-    lastMessage: "I've sent you the documents 📄",
-    time: 'Yesterday',
-    unread: 0,
-    online: false,
-  },
-  {
-    id: '3',
-    name: 'Carol Williams',
-    avatar: 'https://i.pravatar.cc/150?img=5',
-    lastMessage: 'Thanks for your help!',
-    time: 'Yesterday',
-    unread: 0,
-    online: true,
-  },
-  {
-    id: '4',
-    name: 'Dave Brown',
-    avatar: 'https://i.pravatar.cc/150?img=7',
-    lastMessage: 'Let me check and get back to you',
-    time: 'Monday',
-    unread: 0,
-    online: false,
-  },
-  {
-    id: '5',
-    name: 'Eve Davis',
-    avatar: 'https://i.pravatar.cc/150?img=9',
-    lastMessage: 'That sounds great! 👍',
-    time: 'Monday',
-    unread: 1,
-    online: true,
-  },
-];
-
-// Stories data
-const storiesData = [
-  {
-    id: '1',
-    name: 'Your Story',
-    avatar: 'https://i.pravatar.cc/150?img=3',
-    hasUnseenStory: false,
-    isYourStory: true,
-  },
-  {
-    id: '2',
-    name: 'Alice',
-    avatar: 'https://i.pravatar.cc/150?img=1',
-    hasUnseenStory: true,
-  },
-  {
-    id: '3',
-    name: 'Bob',
-    avatar: 'https://i.pravatar.cc/150?img=2',
-    hasUnseenStory: true,
-  },
-  {
-    id: '4',
-    name: 'Carol',
-    avatar: 'https://i.pravatar.cc/150?img=5',
-    hasUnseenStory: true,
-  },
-  {
-    id: '5',
-    name: 'Dave',
-    avatar: 'https://i.pravatar.cc/150?img=7',
-    hasUnseenStory: false,
-  },
-];
-
 const Chats = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const { toast } = useToast();
   
   const filteredChats = chatData.filter(chat => 
     chat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     chat.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleAudioCall = (e: React.MouseEvent, chatId: string) => {
+    e.stopPropagation();
+    navigate(`/audio-call/${chatId}`);
+  };
+
+  const handleVideoCall = (e: React.MouseEvent, chatId: string) => {
+    e.stopPropagation();
+    navigate(`/video-call/${chatId}`);
+  };
+
   return (
-    <div className="h-full flex flex-col">
-      <div className="p-4 border-b bg-card">
+    <div className="h-full flex flex-col bg-background">
+      <div className="p-4 border-b bg-card shadow-sm">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-semibold">Chats</h1>
+          <h1 className="text-2xl font-semibold">ChatterBox</h1>
           <div className="flex space-x-2">
             <Button variant="ghost" size="icon">
               <Phone className="h-5 w-5" />
@@ -142,12 +71,16 @@ const Chats = () => {
       <div className="px-4 py-3 overflow-x-auto">
         <div className="flex space-x-4">
           {storiesData.map((story) => (
-            <div key={story.id} className="flex flex-col items-center space-y-1 min-w-[64px]">
-              <div className={`${story.hasUnseenStory ? 'story-ring' : 'p-[2px]'}`}>
+            <div 
+              key={story.id} 
+              className="flex flex-col items-center space-y-1 min-w-[64px]"
+              onClick={() => navigate('/stories')}
+            >
+              <div className={`${story.stories.length > 0 ? 'story-ring' : 'p-[2px]'}`}>
                 <div className="relative">
                   <Avatar className="h-16 w-16 border-2 border-background">
-                    <AvatarImage src={story.avatar} />
-                    <AvatarFallback>{story.name[0]}</AvatarFallback>
+                    <AvatarImage src={story.user.avatar} />
+                    <AvatarFallback>{story.user.name[0]}</AvatarFallback>
                   </Avatar>
                   {story.isYourStory && (
                     <div className="absolute bottom-0 right-0 bg-primary rounded-full p-1 border-2 border-background">
@@ -156,7 +89,7 @@ const Chats = () => {
                   )}
                 </div>
               </div>
-              <span className="text-xs truncate w-full text-center">{story.name}</span>
+              <span className="text-xs truncate w-full text-center">{story.user.name}</span>
             </div>
           ))}
         </div>
@@ -200,28 +133,48 @@ const Chats = () => {
                     </div>
                   </div>
                   
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="ml-2" 
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>Mute notifications</DropdownMenuItem>
-                      <DropdownMenuItem>Pin conversation</DropdownMenuItem>
-                      <DropdownMenuItem>Mark as read</DropdownMenuItem>
-                      <DropdownMenuItem>Archive chat</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-destructive">Delete chat</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <div className="flex items-center ml-2 space-x-1">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8"
+                      onClick={(e) => handleAudioCall(e, chat.id)}
+                    >
+                      <Phone className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                    </Button>
+                    
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8"
+                      onClick={(e) => handleVideoCall(e, chat.id)}
+                    >
+                      <Video className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                    </Button>
+                  
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8" 
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem>Mute notifications</DropdownMenuItem>
+                        <DropdownMenuItem>Pin conversation</DropdownMenuItem>
+                        <DropdownMenuItem>Mark as read</DropdownMenuItem>
+                        <DropdownMenuItem>Archive chat</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-destructive">Delete chat</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
               </div>
             ))}

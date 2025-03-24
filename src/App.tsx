@@ -18,10 +18,12 @@ import ChatDetail from "./pages/ChatDetail";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import AudioCall from "./pages/AudioCall";
+import VideoCall from "./pages/VideoCall";
 
 // Create a client
 const App = () => {
-  // Create a new QueryClient instance for every render
+  // Create a stable QueryClient instance
   const [queryClient] = useState(() => new QueryClient());
 
   // Mock authentication state
@@ -66,6 +68,16 @@ const App = () => {
               <Route path="/settings" element={<Settings />} />
             </Route>
             
+            <Route path="/audio-call/:id" element={
+              <ProtectedRoute>
+                <AudioCall />
+              </ProtectedRoute>
+            } />
+            <Route path="/video-call/:id" element={
+              <ProtectedRoute>
+                <VideoCall />
+              </ProtectedRoute>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

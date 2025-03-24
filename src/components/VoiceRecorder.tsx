@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface VoiceRecorderProps {
   onRecordComplete: (audioBlob: Blob) => void;
@@ -25,9 +26,11 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
   const [isPaused, setIsPaused] = useState(false);
   const [duration, setDuration] = useState(0);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const { toast } = useToast();
 
   const startRecording = async () => {
     try {
@@ -44,18 +47,29 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
       
       mediaRecorder.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        setAudioBlob(audioBlob);
         const url = URL.createObjectURL(audioBlob);
         setAudioUrl(url);
       };
       
-      mediaRecorder.start();
+      mediaRecorder.start(100); // Collect data every 100ms
       setIsRecording(true);
       if (onRecordStart) onRecordStart();
       
       // Start timer
       startTimer();
+      
+      toast({
+        title: "Recording started",
+        description: "Speak now...",
+      });
     } catch (error) {
       console.error('Error accessing microphone:', error);
+      toast({
+        title: "Microphone Error",
+        description: "Could not access your microphone",
+        variant: "destructive"
+      });
     }
   };
 
@@ -64,9 +78,15 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
       if (isPaused) {
         mediaRecorderRef.current.resume();
         startTimer();
+        toast({
+          title: "Recording resumed",
+        });
       } else {
         mediaRecorderRef.current.pause();
         stopTimer();
+        toast({
+          title: "Recording paused",
+        });
       }
       setIsPaused(!isPaused);
     }
@@ -82,10 +102,16 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
       // Stop all audio tracks
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
       
+      toast({
+        title: "Recording completed",
+        description: `${formatTime(duration)} recorded`,
+      });
+      
       // Small timeout to ensure ondataavailable has processed
       setTimeout(() => {
         if (audioChunksRef.current.length > 0) {
           const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+          setAudioBlob(audioBlob);
           onRecordComplete(audioBlob);
         }
       }, 300);
@@ -100,25 +126,34 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
     setIsPaused(false);
     setDuration(0);
     setAudioUrl(null);
+    setAudioBlob(null);
     stopTimer();
+    
+    toast({
+      title: "Recording cancelled",
+    });
+    
     if (onCancel) onCancel();
   };
 
   const sendAudio = () => {
-    if (audioChunksRef.current.length > 0) {
-      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-      
-      // Use onRecordComplete as fallback if onSend is not provided
+    if (audioBlob) {
+      // Use onSend if provided, otherwise use onRecordComplete as fallback
       if (onSend) {
         onSend(audioBlob);
       } else {
         onRecordComplete(audioBlob);
       }
       
+      toast({
+        title: "Voice message sent",
+      });
+      
       setIsRecording(false);
       setIsPaused(false);
       setDuration(0);
       setAudioUrl(null);
+      setAudioBlob(null);
     }
   };
 
@@ -151,8 +186,13 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
         mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
       }
       stopTimer();
+      
+      // Clean up URLs to avoid memory leaks
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+      }
     };
-  }, []);
+  }, [audioUrl]);
 
   return (
     <div className={cn("flex items-center gap-2 p-2 bg-muted/30 rounded-lg", className)}>

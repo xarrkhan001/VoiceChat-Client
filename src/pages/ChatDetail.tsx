@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -11,104 +12,27 @@ import {
   Video, 
   Image as ImageIcon, 
   Paperclip, 
-  Mic, 
   SendHorizontal,
   Check,
   CheckCheck,
   Clock
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
-import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useToast } from '@/hooks/use-toast';
 import VoiceRecorder from '@/components/VoiceRecorder';
-
-// Mock data for a chat
-const mockContacts = [
-  {
-    id: '1',
-    name: 'Sarah Johnson',
-    avatar: 'https://i.pravatar.cc/150?img=1',
-    lastSeen: new Date(),
-    isOnline: true,
-  },
-  {
-    id: '2',
-    name: 'Michael Chen',
-    avatar: 'https://i.pravatar.cc/150?img=2',
-    lastSeen: new Date(Date.now() - 1000 * 60 * 15),
-    isOnline: false,
-  },
-  {
-    id: '3',
-    name: 'Jessica Williams',
-    avatar: 'https://i.pravatar.cc/150?img=5',
-    lastSeen: new Date(Date.now() - 1000 * 60 * 60),
-    isOnline: false,
-  }
-];
-
-// Mock message data
-const generateMockMessages = (contactId: string) => {
-  const contact = mockContacts.find(c => c.id === contactId);
-  const currentUser = {
-    id: 'me',
-    name: 'You',
-    avatar: localStorage.getItem('userAvatar') || 'https://i.pravatar.cc/150?img=3',
-  };
-  
-  if (!contact) return [];
-  
-  return [
-    {
-      id: '1',
-      sender: contact,
-      content: 'Hey there! How are you doing today?',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-      status: 'read',
-    },
-    {
-      id: '2',
-      sender: currentUser,
-      content: 'I\'m doing great! Just finished a big project at work.',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 1.5).toISOString(),
-      status: 'read',
-    },
-    {
-      id: '3',
-      sender: contact,
-      content: 'That\'s awesome! Was it the one you were telling me about last week?',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 1).toISOString(),
-      status: 'read',
-    },
-    {
-      id: '4',
-      sender: currentUser,
-      content: 'Yes, exactly! It was challenging but I learned a lot from it.',
-      timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-      status: 'read',
-    },
-    {
-      id: '5',
-      sender: contact,
-      content: 'Would you like to meet up for coffee this weekend and tell me more about it?',
-      timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-      status: 'read',
-    },
-  ];
-};
+import EmojiPicker from '@/components/EmojiPicker';
+import { mockContacts, generateMockMessages } from '@/lib/mockData';
 
 const ChatDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
   
   const [contact, setContact] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
-  const [recordingDuration, setRecordingDuration] = useState(0);
   
   useEffect(() => {
     if (id) {
@@ -116,27 +40,20 @@ const ChatDetail = () => {
       if (foundContact) {
         setContact(foundContact);
         setMessages(generateMockMessages(id));
+      } else {
+        toast({
+          title: "Contact not found",
+          description: "Could not find this conversation",
+          variant: "destructive"
+        });
+        navigate('/chats');
       }
     }
-  }, [id]);
+  }, [id, navigate, toast]);
   
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-  
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    if (isRecording) {
-      interval = setInterval(() => {
-        setRecordingDuration(prev => prev + 1);
-      }, 1000);
-    } else {
-      setRecordingDuration(0);
-    }
-    
-    return () => clearInterval(interval);
-  }, [isRecording]);
   
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;
@@ -145,7 +62,7 @@ const ChatDetail = () => {
       id: Date.now().toString(),
       sender: {
         id: 'me',
-        name: 'You',
+        name: localStorage.getItem('userName') || 'You',
         avatar: localStorage.getItem('userAvatar') || 'https://i.pravatar.cc/150?img=3',
       },
       content: newMessage,
@@ -156,6 +73,29 @@ const ChatDetail = () => {
     setMessages(prev => [...prev, message]);
     setNewMessage('');
     
+    // Simulate message delivered
+    setTimeout(() => {
+      setMessages(prev => 
+        prev.map(msg => 
+          msg.id === message.id 
+            ? { ...msg, status: 'delivered' } 
+            : msg
+        )
+      );
+      
+      // Simulate message read
+      setTimeout(() => {
+        setMessages(prev => 
+          prev.map(msg => 
+            msg.id === message.id 
+              ? { ...msg, status: 'read' } 
+              : msg
+          )
+        );
+      }, 1000);
+    }, 1000);
+    
+    // Simulate reply after a delay
     setTimeout(() => {
       const replyMessage = {
         id: (Date.now() + 1).toString(),
@@ -166,6 +106,11 @@ const ChatDetail = () => {
       };
       
       setMessages(prev => [...prev, replyMessage]);
+      
+      toast({
+        title: `New message from ${contact.name}`,
+        description: replyMessage.content,
+      });
     }, 3000);
   };
   
@@ -176,6 +121,10 @@ const ChatDetail = () => {
     }
   };
 
+  const handleEmojiSelect = (emoji: string) => {
+    setNewMessage(prev => prev + emoji);
+  };
+
   const handleVoiceMessageComplete = (audioBlob: Blob) => {
     const audioUrl = URL.createObjectURL(audioBlob);
     
@@ -183,7 +132,7 @@ const ChatDetail = () => {
       id: Date.now().toString(),
       sender: {
         id: 'me',
-        name: 'You',
+        name: localStorage.getItem('userName') || 'You',
         avatar: localStorage.getItem('userAvatar') || 'https://i.pravatar.cc/150?img=3',
       },
       content: '',
@@ -195,6 +144,45 @@ const ChatDetail = () => {
     
     setMessages(prev => [...prev, voiceMessage]);
     setIsRecording(false);
+    
+    // Simulate message delivered and read
+    setTimeout(() => {
+      setMessages(prev => 
+        prev.map(msg => 
+          msg.id === voiceMessage.id 
+            ? { ...msg, status: 'delivered' } 
+            : msg
+        )
+      );
+      
+      setTimeout(() => {
+        setMessages(prev => 
+          prev.map(msg => 
+            msg.id === voiceMessage.id 
+              ? { ...msg, status: 'read' } 
+              : msg
+          )
+        );
+        
+        // Simulate reply to voice message
+        setTimeout(() => {
+          const replyMessage = {
+            id: (Date.now() + 1).toString(),
+            sender: contact,
+            content: 'I just listened to your voice message. Thanks!',
+            timestamp: new Date().toISOString(),
+            status: 'read',
+          };
+          
+          setMessages(prev => [...prev, replyMessage]);
+          
+          toast({
+            title: `New message from ${contact.name}`,
+            description: replyMessage.content,
+          });
+        }, 2000);
+      }, 1000);
+    }, 1000);
   };
   
   const formatMessageTime = (timestamp: string) => {
@@ -214,12 +202,20 @@ const ChatDetail = () => {
     }
   };
   
+  const initiateAudioCall = () => {
+    navigate(`/audio-call/${id}`);
+  };
+  
+  const initiateVideoCall = () => {
+    navigate(`/video-call/${id}`);
+  };
+  
   if (!contact) {
     return <div className="flex items-center justify-center h-full">Loading chat...</div>;
   }
   
   const ChatHeader = () => (
-    <div className="flex items-center justify-between p-4 border-b">
+    <div className="flex items-center justify-between p-4 border-b bg-card shadow-sm sticky top-0 z-10">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate('/chats')}>
           <ArrowLeft className="h-5 w-5" />
@@ -239,12 +235,24 @@ const ChatDetail = () => {
       </div>
       
       <div className="flex items-center gap-1">
-        <Button variant="ghost" size="icon">
-          <Phone className="h-5 w-5" />
-        </Button>
-        <Button variant="ghost" size="icon">
-          <Video className="h-5 w-5" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" onClick={initiateAudioCall}>
+              <Phone className="h-5 w-5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Audio Call</TooltipContent>
+        </Tooltip>
+        
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" onClick={initiateVideoCall}>
+              <Video className="h-5 w-5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Video Call</TooltipContent>
+        </Tooltip>
+        
         <Button variant="ghost" size="icon">
           <MoreVertical className="h-5 w-5" />
         </Button>
@@ -298,7 +306,7 @@ const ChatDetail = () => {
   };
   
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-background">
       <ChatHeader />
       
       <div className="flex-1 overflow-hidden">
@@ -310,53 +318,43 @@ const ChatDetail = () => {
         </ScrollArea>
       </div>
       
-      <div className="p-4 border-t flex items-end gap-2">
-        {isRecording ? (
-          <div className="flex-1 flex items-center gap-3 bg-muted/50 p-3 rounded-xl">
-            <span className="animate-pulse w-3 h-3 rounded-full bg-destructive"></span>
-            <span className="text-sm text-muted-foreground">Recording... {recordingDuration}s</span>
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              onClick={() => setIsRecording(false)}
-              className="ml-auto"
-            >
-              Cancel
+      <div className="p-4 border-t bg-card shadow-sm flex flex-col gap-2">
+        {!isRecording && (
+          <div className="flex items-end gap-2">
+            <Button variant="ghost" size="icon">
+              <Paperclip className="h-5 w-5" />
             </Button>
+            
+            <Button variant="ghost" size="icon">
+              <ImageIcon className="h-5 w-5" />
+            </Button>
+            
+            <Textarea
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="Type a message..."
+              className="flex-1 max-h-32 bg-muted/50"
+              onKeyDown={handleKeyDown}
+            />
+            
+            <EmojiPicker onEmojiSelect={handleEmojiSelect} />
+            
+            {newMessage.trim() ? (
+              <Button 
+                onClick={handleSendMessage} 
+                size="icon"
+                className="rounded-full"
+              >
+                <SendHorizontal className="h-5 w-5" />
+              </Button>
+            ) : (
+              <VoiceRecorder 
+                onRecordComplete={handleVoiceMessageComplete}
+                onRecordStart={() => setIsRecording(true)}
+                onCancel={() => setIsRecording(false)}
+              />
+            )}
           </div>
-        ) : (
-          <Textarea
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Type a message..."
-            className="flex-1 max-h-32"
-            onKeyDown={handleKeyDown}
-          />
-        )}
-        
-        {!isRecording && !newMessage && (
-          <Button 
-            onClick={() => setIsRecording(true)} 
-            size="icon" 
-            variant="ghost"
-          >
-            <Mic className="h-5 w-5" />
-          </Button>
-        )}
-        
-        {isRecording ? (
-          <VoiceRecorder 
-            onRecordComplete={handleVoiceMessageComplete}
-            onRecordStart={() => {}}
-          />
-        ) : (
-          <Button 
-            onClick={handleSendMessage} 
-            size="icon" 
-            disabled={!newMessage.trim() && !isRecording}
-          >
-            <SendHorizontal className="h-5 w-5" />
-          </Button>
         )}
       </div>
     </div>

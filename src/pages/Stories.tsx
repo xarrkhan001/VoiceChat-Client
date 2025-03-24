@@ -1,126 +1,66 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, MoreVertical, Image as ImageIcon, Smile, Send, X, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Search, Plus, MoreVertical, Image as ImageIcon, Smile, Send, X, ArrowLeft, ArrowRight, Camera, Video as VideoIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { useIsMobile } from '@/hooks/use-mobile';
-
-// Mock stories data
-const storiesData = [
-  {
-    id: '1',
-    user: {
-      id: '1',
-      name: 'Your Story',
-      avatar: 'https://i.pravatar.cc/150?img=3',
-    },
-    stories: [],
-    isYourStory: true,
-  },
-  {
-    id: '2',
-    user: {
-      id: '2',
-      name: 'Alice Johnson',
-      avatar: 'https://i.pravatar.cc/150?img=1',
-    },
-    stories: [
-      {
-        id: 's1',
-        type: 'image',
-        url: 'https://images.unsplash.com/photo-1617501884912-17de21c40d1c?w=800&auto=format&fit=crop',
-        timestamp: '2 hours ago',
-      },
-      {
-        id: 's2',
-        type: 'image',
-        url: 'https://images.unsplash.com/photo-1673191897612-8bba1e33fd56?w=800&auto=format&fit=crop',
-        timestamp: '1 hour ago',
-      },
-    ],
-  },
-  {
-    id: '3',
-    user: {
-      id: '3',
-      name: 'Bob Smith',
-      avatar: 'https://i.pravatar.cc/150?img=2',
-    },
-    stories: [
-      {
-        id: 's3',
-        type: 'image',
-        url: 'https://images.unsplash.com/photo-1533050487297-09b450131914?w=800&auto=format&fit=crop',
-        timestamp: '5 hours ago',
-      },
-    ],
-  },
-  {
-    id: '4',
-    user: {
-      id: '4',
-      name: 'Carol Williams',
-      avatar: 'https://i.pravatar.cc/150?img=5',
-    },
-    stories: [
-      {
-        id: 's4',
-        type: 'image',
-        url: 'https://images.unsplash.com/photo-1516203294340-5ba5f612dc6a?w=800&auto=format&fit=crop',
-        timestamp: '8 hours ago',
-      },
-      {
-        id: 's5',
-        type: 'image',
-        url: 'https://images.unsplash.com/photo-1535913775056-4374754663c9?w=800&auto=format&fit=crop',
-        timestamp: '7 hours ago',
-      },
-      {
-        id: 's6',
-        type: 'image',
-        url: 'https://images.unsplash.com/photo-1624836018860-8bf21e244bfe?w=800&auto=format&fit=crop',
-        timestamp: '6 hours ago',
-      },
-    ],
-  },
-  {
-    id: '5',
-    user: {
-      id: '5',
-      name: 'Dave Brown',
-      avatar: 'https://i.pravatar.cc/150?img=7',
-    },
-    stories: [
-      {
-        id: 's7',
-        type: 'image',
-        url: 'https://images.unsplash.com/photo-1569931727741-dd7f6482e65f?w=800&auto=format&fit=crop',
-        timestamp: '12 hours ago',
-      },
-    ],
-  },
-];
+import { useToast } from '@/hooks/use-toast';
+import { storiesData } from '@/lib/mockData';
+import EmojiPicker from '@/components/EmojiPicker';
 
 const Stories = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const isMobile = useIsMobile();
+  const [stories, setStories] = useState(storiesData);
+  const { toast } = useToast();
+  const [showStoryUpload, setShowStoryUpload] = useState(false);
   
-  const filteredStories = storiesData.filter(story => 
+  const filteredStories = stories.filter(story => 
     story.user.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleAddStory = (url: string, type: 'image' | 'video') => {
+    const myStoryIndex = stories.findIndex(s => s.user.id === 'me');
+    
+    if (myStoryIndex !== -1) {
+      // Add to existing stories array
+      const updatedStories = [...stories];
+      updatedStories[myStoryIndex] = {
+        ...updatedStories[myStoryIndex],
+        stories: [
+          ...updatedStories[myStoryIndex].stories,
+          {
+            id: `s${Date.now()}`,
+            type,
+            url,
+            timestamp: 'Just now',
+          }
+        ]
+      };
+      
+      setStories(updatedStories);
+      toast({
+        title: "Story added successfully",
+        description: "Your story will be visible for 24 hours",
+      });
+    }
+  };
 
   return (
     <div className="h-full flex flex-col">
       <div className="p-4 border-b bg-card">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-semibold">Stories</h1>
-          <Button variant="ghost" size="icon">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => setShowStoryUpload(true)}
+          >
             <Plus className="h-5 w-5" />
           </Button>
         </div>
@@ -136,6 +76,38 @@ const Stories = () => {
         </div>
       </div>
       
+      {/* Story Upload Dialog */}
+      <Dialog open={showStoryUpload} onOpenChange={setShowStoryUpload}>
+        <DialogContent className="sm:max-w-md">
+          <div className="p-2">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Add Story</h2>
+              <Button variant="ghost" size="icon" onClick={() => setShowStoryUpload(false)}>
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <StoryUploader 
+                type="image" 
+                onUploadComplete={(url) => {
+                  handleAddStory(url, 'image');
+                  setShowStoryUpload(false);
+                }} 
+              />
+              
+              <StoryUploader 
+                type="video" 
+                onUploadComplete={(url) => {
+                  handleAddStory(url, 'video');
+                  setShowStoryUpload(false);
+                }} 
+              />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
       <div className="flex-1 overflow-y-auto p-4">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {filteredStories.map((story) => (
@@ -143,6 +115,97 @@ const Stories = () => {
           ))}
         </div>
       </div>
+    </div>
+  );
+};
+
+interface StoryUploaderProps {
+  type: 'image' | 'video';
+  onUploadComplete: (url: string) => void;
+}
+
+const StoryUploader: React.FC<StoryUploaderProps> = ({ type, onUploadComplete }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const { toast } = useToast();
+  
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const isCorrectType = type === 'image' 
+      ? file.type.startsWith('image/') 
+      : file.type.startsWith('video/');
+    
+    if (!isCorrectType) {
+      toast({
+        title: `Invalid file type`,
+        description: `Please select a ${type} file`,
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Simulate file upload
+    setIsUploading(true);
+    
+    const interval = setInterval(() => {
+      setUploadProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setIsUploading(false);
+          
+          // Create object URL for the selected file
+          const url = URL.createObjectURL(file);
+          onUploadComplete(url);
+          
+          return 0;
+        }
+        return prev + 10;
+      });
+    }, 300);
+  };
+  
+  return (
+    <div className="flex flex-col items-center">
+      <div 
+        onClick={() => fileInputRef.current?.click()}
+        className="h-32 w-full rounded-lg border-2 border-dashed border-muted-foreground/50 flex flex-col items-center justify-center hover:bg-muted/50 cursor-pointer transition-colors"
+      >
+        {isUploading ? (
+          <div className="flex flex-col items-center w-full p-4">
+            <div className="text-sm mb-2">Uploading... {uploadProgress}%</div>
+            <Progress value={uploadProgress} className="w-full h-2" />
+          </div>
+        ) : (
+          <>
+            {type === 'image' ? (
+              <ImageIcon className="h-8 w-8 text-muted-foreground mb-2" />
+            ) : (
+              <VideoIcon className="h-8 w-8 text-muted-foreground mb-2" />
+            )}
+            <p className="text-sm text-muted-foreground text-center">
+              Click to upload {type}
+            </p>
+          </>
+        )}
+      </div>
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        className="hidden"
+        accept={type === 'image' ? 'image/*' : 'video/*'}
+        onChange={handleFileSelect}
+      />
+      <Button 
+        variant="outline" 
+        className="mt-2 w-full"
+        size="sm"
+        onClick={() => fileInputRef.current?.click()}
+      >
+        Select {type}
+      </Button>
     </div>
   );
 };
@@ -171,6 +234,7 @@ const StoryCard = ({ story }: StoryCardProps) => {
   const [progress, setProgress] = useState(0);
   const [open, setOpen] = useState(false);
   const [replyText, setReplyText] = useState('');
+  const { toast } = useToast();
   
   const hasStories = story.stories.length > 0;
   const activeStory = hasStories ? story.stories[activeStoryIndex] : null;
@@ -193,9 +257,16 @@ const StoryCard = ({ story }: StoryCardProps) => {
   
   const handleSendReply = () => {
     if (replyText.trim()) {
-      console.log('Sending reply:', replyText);
+      toast({
+        title: "Reply sent",
+        description: `You replied to ${story.user.name}'s story`
+      });
       setReplyText('');
     }
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    setReplyText(prev => prev + emoji);
   };
   
   // Progress timer
@@ -300,11 +371,21 @@ const StoryCard = ({ story }: StoryCardProps) => {
             
             {/* Story content */}
             <div className="relative flex-1 flex items-center justify-center bg-black">
-              <img 
-                src={activeStory?.url} 
-                alt={story.user.name} 
-                className="max-h-full max-w-full object-contain"
-              />
+              {activeStory?.type === 'video' ? (
+                <video 
+                  src={activeStory.url} 
+                  autoPlay 
+                  muted 
+                  loop 
+                  className="max-h-full max-w-full object-contain"
+                />
+              ) : (
+                <img 
+                  src={activeStory?.url} 
+                  alt={story.user.name} 
+                  className="max-h-full max-w-full object-contain"
+                />
+              )}
               
               {/* Story controls */}
               <div className="absolute inset-0 flex">
@@ -322,10 +403,15 @@ const StoryCard = ({ story }: StoryCardProps) => {
                   placeholder="Reply to story..."
                   className="mr-2"
                 />
-                <Button variant="ghost" size="icon" className="text-muted-foreground">
-                  <Smile className="h-5 w-5" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={handleSendReply} disabled={!replyText.trim()}>
+                
+                <EmojiPicker onEmojiSelect={handleEmojiSelect} />
+                
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={handleSendReply} 
+                  disabled={!replyText.trim()}
+                >
                   <Send className={`h-5 w-5 ${replyText.trim() ? 'text-primary' : 'text-muted-foreground'}`} />
                 </Button>
               </div>
