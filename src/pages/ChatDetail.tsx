@@ -110,7 +110,6 @@ const ChatDetail = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   
-  // Load contact and messages
   useEffect(() => {
     if (id) {
       const foundContact = mockContacts.find(c => c.id === id);
@@ -121,12 +120,10 @@ const ChatDetail = () => {
     }
   }, [id]);
   
-  // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
   
-  // Recording timer
   useEffect(() => {
     let interval: NodeJS.Timeout;
     
@@ -159,7 +156,6 @@ const ChatDetail = () => {
     setMessages(prev => [...prev, message]);
     setNewMessage('');
     
-    // Simulate received message
     setTimeout(() => {
       const replyMessage = {
         id: (Date.now() + 1).toString(),
@@ -180,16 +176,13 @@ const ChatDetail = () => {
     }
   };
 
-  // Function to handle voice message completion
   const handleVoiceMessageComplete = (audioBlob: Blob) => {
-    // Create an audio URL for preview
     const audioUrl = URL.createObjectURL(audioBlob);
     
-    // Create a simulated voice message
     const voiceMessage = {
       id: Date.now().toString(),
       sender: {
-        id: '1', // Current user's ID
+        id: 'me',
         name: 'You',
         avatar: localStorage.getItem('userAvatar') || 'https://i.pravatar.cc/150?img=3',
       },
@@ -200,17 +193,14 @@ const ChatDetail = () => {
       status: 'sent',
     };
     
-    // Add to messages
     setMessages(prev => [...prev, voiceMessage]);
     setIsRecording(false);
   };
   
-  // Format timestamp
   const formatMessageTime = (timestamp: string) => {
     return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
   };
   
-  // Render message status icon
   const renderMessageStatus = (status: string) => {
     switch (status) {
       case 'sent':

@@ -7,12 +7,20 @@ import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
 interface VoiceRecorderProps {
-  onSend: (audioBlob: Blob) => void;
-  onCancel: () => void;
+  onRecordComplete: (audioBlob: Blob) => void;
+  onRecordStart?: () => void;
+  onSend?: (audioBlob: Blob) => void;
+  onCancel?: () => void;
   className?: string;
 }
 
-const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSend, onCancel, className }) => {
+const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ 
+  onRecordComplete, 
+  onRecordStart, 
+  onSend, 
+  onCancel, 
+  className 
+}) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [duration, setDuration] = useState(0);
@@ -42,6 +50,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSend, onCancel, classNa
       
       mediaRecorder.start();
       setIsRecording(true);
+      if (onRecordStart) onRecordStart();
       
       // Start timer
       startTimer();
@@ -72,6 +81,14 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSend, onCancel, classNa
       
       // Stop all audio tracks
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      
+      // Small timeout to ensure ondataavailable has processed
+      setTimeout(() => {
+        if (audioChunksRef.current.length > 0) {
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+          onRecordComplete(audioBlob);
+        }
+      }, 300);
     }
   };
 
@@ -84,13 +101,20 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSend, onCancel, classNa
     setDuration(0);
     setAudioUrl(null);
     stopTimer();
-    onCancel();
+    if (onCancel) onCancel();
   };
 
   const sendAudio = () => {
     if (audioChunksRef.current.length > 0) {
       const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-      onSend(audioBlob);
+      
+      // Use onRecordComplete as fallback if onSend is not provided
+      if (onSend) {
+        onSend(audioBlob);
+      } else {
+        onRecordComplete(audioBlob);
+      }
+      
       setIsRecording(false);
       setIsPaused(false);
       setDuration(0);
