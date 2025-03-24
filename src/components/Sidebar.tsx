@@ -65,10 +65,10 @@ const Sidebar = ({ onClose }: SidebarProps) => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-card border-r">
-      <div className="p-4 flex items-center justify-between border-b">
+    <div className="flex flex-col h-full bg-card border-r shadow-md">
+      <div className="p-4 flex items-center justify-between border-b bg-gradient-to-r from-background to-muted/30">
         <div className="flex items-center space-x-2">
-          <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center">
+          <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center shadow-sm">
             <MessageSquare className="h-5 w-5 text-white" />
           </div>
           <span className="text-xl font-semibold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">ChatterBox</span>
@@ -84,10 +84,10 @@ const Sidebar = ({ onClose }: SidebarProps) => {
       </div>
       
       <div className="p-4">
-        <div className="flex items-center space-x-3 mb-6 bg-muted/30 p-3 rounded-lg">
-          <Avatar className="h-14 w-14 border-2 border-primary/20 ring-2 ring-primary/10 ring-offset-2 ring-offset-background">
+        <div className="flex items-center space-x-3 mb-6 bg-muted/30 p-3 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+          <Avatar className="h-14 w-14 border-2 border-primary/20 ring-2 ring-primary/10 ring-offset-2 ring-offset-background shadow-md">
             <AvatarImage src={userData.avatar} alt={userData.name} />
-            <AvatarFallback className="bg-primary/10 text-primary font-medium">
+            <AvatarFallback className="bg-gradient-to-br from-primary/80 to-primary/60 text-primary-foreground font-medium">
               {userData.name.charAt(0)}
             </AvatarFallback>
           </Avatar>
@@ -105,7 +105,7 @@ const Sidebar = ({ onClose }: SidebarProps) => {
               className={({ isActive }) => 
                 `flex items-center space-x-2 px-3 py-2 rounded-md text-sm transition-colors duration-200 ${
                   isActive 
-                    ? 'bg-primary/10 text-primary font-medium' 
+                    ? 'bg-primary/10 text-primary font-medium shadow-sm' 
                     : 'text-foreground hover:bg-muted/70'
                 }`
               }
@@ -118,13 +118,18 @@ const Sidebar = ({ onClose }: SidebarProps) => {
         </nav>
       </div>
       
-      <div className="mt-auto p-4 border-t">
+      <div className="mt-auto p-4 border-t bg-gradient-to-r from-muted/30 to-background">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
             <span className="text-sm">Active</span>
           </div>
-          <Button variant="outline" size="sm" onClick={handleLogout} className="hover:bg-destructive/10 hover:text-destructive">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleLogout} 
+            className="hover:bg-destructive/10 hover:text-destructive shadow-sm hover:shadow-md transition-all duration-200"
+          >
             <LogOut className="h-4 w-4 mr-1" />
             <span>Logout</span>
           </Button>
