@@ -71,7 +71,7 @@ const Sidebar = ({ onClose }: SidebarProps) => {
           <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center shadow-sm">
             <MessageSquare className="h-5 w-5 text-white" />
           </div>
-          <span className="text-xl font-semibold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">ChatWave</span>
+          <span className="text-xl font-semibold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">ChatterBox</span>
         </div>
         <div className="flex items-center space-x-1">
           <ThemeToggle />

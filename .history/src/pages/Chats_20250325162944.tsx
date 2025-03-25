@@ -42,7 +42,7 @@ const Chats = () => {
     <div className="h-full flex flex-col bg-background">
       <div className="p-4 border-b bg-card shadow-sm">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-semibold">ChatWave</h1>
+          <h1 className="text-2xl font-semibold">Chat Wave</h1>
           <div className="flex space-x-2">
             <Button variant="ghost" size="icon">
               <Phone className="h-5 w-5" />
